@@ -5,18 +5,17 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.bakery_tm.bakery.common.SessionManager
 import com.bakery_tm.bakery.data.FoodRepositoryImpl
-import com.bakery_tm.bakery.data.OrderRepositoryImpl
-import com.bakery_tm.bakery.data.OrderStore
+import com.bakery_tm.bakery.data.ShoppingCartRepositoryImpl
 import com.bakery_tm.bakery.data.UserRepositoryImpl
 import com.bakery_tm.bakery.data.database.BakeryDatabase
 import com.bakery_tm.bakery.data.database.entity.ProductEntity
 import com.bakery_tm.bakery.domain.FoodRepository
-import com.bakery_tm.bakery.domain.OrderRepository
+import com.bakery_tm.bakery.domain.ShoppingCartRepository
 import com.bakery_tm.bakery.domain.UserRepository
 import com.bakery_tm.bakery.models.FoodType
 import com.bakery_tm.bakery.view_model.FoodViewModel
-import com.bakery_tm.bakery.view_model.ProfileViewModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
+import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,16 +44,16 @@ val appModule = module {
     single { get<BakeryDatabase>().userDao() }
     single { get<BakeryDatabase>().orderDao() }
     single { get<BakeryDatabase>().productDao() }
+    single { get<BakeryDatabase>().cartDao() }
     single { SessionManager(get()) }
-    single { OrderStore }
     single<UserRepository> { UserRepositoryImpl(get()) }
-    single<OrderRepository> { OrderRepositoryImpl(get()) }
     single<FoodRepository> { FoodRepositoryImpl(get()) }
+    single<ShoppingCartRepository> { ShoppingCartRepositoryImpl(get(), get(), get()) }
 
-    viewModel { RegistrationViewModel(get()) }
-    viewModel { FoodViewModel(get(), get()) }
-    viewModel { ProfileViewModel() }
+    viewModel { RegistrationViewModel(get(), get()) }
+    viewModel { FoodViewModel(get()) }
     viewModel { UserViewModel(get()) }
+    viewModel { ShoppingCartViewModel(get(), get()) }
 }
 
 val predefinedProducts = listOf(

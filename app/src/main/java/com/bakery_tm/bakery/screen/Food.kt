@@ -113,11 +113,11 @@ fun FoodScreenUi(
         ) {
             items(
                 items = when (selectedTab) {
-                0 -> foodList
-                1 -> foodList.filter { it.foodType == FoodType.FLOUR }
-                2 -> foodList.filter { it.foodType == FoodType.DRINK }
-                else -> foodList
-            }) { FoodItem(it, onFoodClick) }
+                    0 -> foodList
+                    1 -> foodList.filter { it.foodType == FoodType.FLOUR }
+                    2 -> foodList.filter { it.foodType == FoodType.DRINK }
+                    else -> foodList
+                }) { FoodItem(it, onFoodClick) }
         }
     }
 }

@@ -17,12 +17,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -31,9 +32,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.bakery_tm.bakery.screen.AccountFieldType
+import com.bakery_tm.bakery.screen.EditScreen
 import com.bakery_tm.bakery.screen.FoodDetailsScreen
 import com.bakery_tm.bakery.screen.FoodScreen
 import com.bakery_tm.bakery.screen.ForgotPasswordScreen
+import com.bakery_tm.bakery.screen.HistoryDetailsScreen
 import com.bakery_tm.bakery.screen.HistoryScreen
 import com.bakery_tm.bakery.screen.LoginScreen
 import com.bakery_tm.bakery.screen.ProfileScreen
@@ -41,6 +45,8 @@ import com.bakery_tm.bakery.screen.RegistrationScreen
 import com.bakery_tm.bakery.screen.ShoppingCartScreen
 import com.bakery_tm.bakery.screen.SplashScreen
 import com.bakery_tm.bakery.view_model.FoodViewModel
+import com.bakery_tm.bakery.view_model.RegistrationViewModel
+import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
 import org.koin.androidx.compose.koinViewModel
 
@@ -48,6 +54,8 @@ import org.koin.androidx.compose.koinViewModel
 fun AppNavigation(
     userViewModel: UserViewModel = koinViewModel(),
     foodViewModel: FoodViewModel = koinViewModel(),
+    shoppingCartViewModel: ShoppingCartViewModel = koinViewModel(),
+    registrationViewModel: RegistrationViewModel = koinViewModel(),
 ) {
     val navController = rememberNavController()
     val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
@@ -62,6 +70,7 @@ fun AppNavigation(
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     LoginScreen(
                         modifier = Modifier.padding(innerPadding),
+                        viewModel = registrationViewModel,
                         onFoodNavigation = {
                             navController.navigate(FOOD) {
                                 popUpTo(0) { inclusive = true }
@@ -75,7 +84,8 @@ fun AppNavigation(
             composable(REGISTRATION) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     RegistrationScreen(
-                        Modifier.padding(innerPadding)
+                        Modifier.padding(innerPadding),
+                        viewModel = registrationViewModel,
                     ) {
                         navController.navigate(FOOD) {
                             popUpTo(0) { inclusive = true }
@@ -98,7 +108,7 @@ fun AppNavigation(
                     R.drawable.ic_clock,
                     R.drawable.profile_icon
                 )
-                var selectedTabIndex by remember { mutableIntStateOf(0) }
+                var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
@@ -129,7 +139,6 @@ fun AppNavigation(
                                                 if (selectedTabIndex == index) Color.Black
                                                 else Color.Gray
                                             )
-
                                         )
                                     },
                                     selected = selectedTabIndex == index,
@@ -145,17 +154,22 @@ fun AppNavigation(
                         0 -> FoodScreen(foodViewModel) {
                             navController.navigate(foodDetails(it))
                         }
-
-                        1 -> ShoppingCartScreen(Modifier.padding(innerPadding))
-                        2 -> HistoryScreen(Modifier.padding(innerPadding)) {
-                            navController.navigate(foodDetails(it))
+                        1 -> ShoppingCartScreen(
+                            shoppingCartViewModel,
+                            Modifier.padding(innerPadding)
+                        )
+                        2 -> HistoryScreen(
+                            Modifier.padding(innerPadding),
+                            shoppingCartViewModel
+                        ) {
+                            navController.navigate(historyDetails(it))
                         }
-
                         3 -> ProfileScreen(
+                            userViewModel,
                             Modifier.padding(innerPadding),
                             onLogOutClicked = {
                                 navController.navigate(LOGIN) {
-                                    //TODO(clean backstack)
+                                    navController.popBackStack()
                                 }
                             },
                             onLogInClicked = {
@@ -163,6 +177,9 @@ fun AppNavigation(
                             },
                             onRegisterClicked = {
                                 navController.navigate(REGISTRATION)
+                            },
+                            onEditClicked = { type ->
+                                navController.navigate(editType(type.name))
                             }
                         )
                     }
@@ -177,8 +194,43 @@ fun AppNavigation(
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         FoodDetailsScreen(
                             foodViewModel,
-                            Modifier.padding(innerPadding),
+                            shoppingCartViewModel,
+                            Modifier.padding(innerPadding).pointerInput(Unit) {},
                             foodId
+                        ) {
+                            navController.popBackStack(
+                                route = FOOD,
+                                inclusive = false
+                            )
+                        }
+                    }
+                } ?: run {
+                    Toast.makeText(context, "Screen not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+            composable(
+                EDIT,
+                arguments = listOf(navArgument(EDIT_TYPE) { type = NavType.StringType })
+            ) {
+                val stringType = it.arguments?.getString(EDIT_TYPE)
+                val type = AccountFieldType.valueOf(stringType.orEmpty())
+                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    EditScreen(userViewModel, Modifier.padding(innerPadding), type) {
+                        navController.popBackStack()
+                    }
+                }
+            }
+            composable(
+                HISTORY_DETAILS,
+                arguments = listOf(navArgument(ORDER_ID) { type = NavType.LongType })
+            ) {
+                val orderId = it.arguments?.getLong(ORDER_ID)
+                orderId?.let {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                        HistoryDetailsScreen(
+                            shoppingCartViewModel,
+                            Modifier.padding(innerPadding),
+                            it
                         ) {
                             navController.popBackStack()
                         }
@@ -198,6 +250,12 @@ const val LOGIN = "login"
 const val FORGOT_PASS = "forgot"
 const val FOOD = "food"
 const val FOOD_ID = "foodId"
+const val ORDER_ID = "orderId"
 const val FOOD_DETAILS = "food/{foodId}"
+const val EDIT = "edit/{type}"
+const val EDIT_TYPE = "type"
+const val HISTORY_DETAILS = "history/{orderId}"
 
 fun foodDetails(foodId: Long) = "food/$foodId"
+fun editType(type: String) = "edit/$type"
+fun historyDetails(orderId: Long) = "history/$orderId"

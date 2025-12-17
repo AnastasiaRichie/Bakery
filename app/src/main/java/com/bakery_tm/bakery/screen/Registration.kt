@@ -1,16 +1,15 @@
 package com.bakery_tm.bakery.screen
 
+import android.content.Intent
 import android.util.Patterns
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Button
@@ -18,13 +17,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -33,10 +32,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.common.InputField
 import com.bakery_tm.bakery.models.FieldType
-import com.bakery_tm.bakery.models.LoginEvent
+import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -44,22 +44,18 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun RegistrationScreen(
     modifier: Modifier,
+    viewModel: RegistrationViewModel,
     onSuccessClick: () -> Unit,
 ) {
-    val viewModel = koinViewModel<RegistrationViewModel>()
-
-    val isLoggedIn by viewModel.isLoggedIn.collectAsState(false)
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is LoginEvent.NavigateToFood -> onSuccessClick()
-                LoginEvent.NavigateToRegister -> onSuccessClick()
-                is LoginEvent.ShowError -> {
-                    println("Ошибка: ${event.message}")
-                }
-
+                NavigationEvent.NavigateToFood, NavigationEvent.NavigateToRegister -> onSuccessClick()
+                is NavigationEvent.ShowError -> println("Ошибка: ${event.message}")
+                else -> Unit
             }
         }
     }
@@ -67,17 +63,23 @@ fun RegistrationScreen(
     RegistrationScreenUi(
         modifier = modifier,
         userStateModel = state,
-        onRegisterClick = viewModel::onLoginClick,
-        {
-            //TODO(Navigate to rules)
+        onRegisterClick = viewModel::onRegisterClick,
+        onTermsClick = {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = "https://axiomabio.com/pdf/test.pdf".toUri()
+            }
+            context.startActivity(intent)
         },
-        {
-            //TODO(Navigate to rules)
+        onPrivacyClick = {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = "https://www.orimi.com/pdf-test.pdf".toUri()
+            }
+            context.startActivity(intent)
         },
-        { value -> viewModel.onRegistrationValueChanged(FieldType.NAME, value) },
-        { value -> viewModel.onRegistrationValueChanged(FieldType.SURNAME, value) },
-        { value -> viewModel.onRegistrationValueChanged(FieldType.EMAIL, value) },
-        { value -> viewModel.onRegistrationValueChanged(FieldType.PASSWORD, value) },
+        onNameChanged = { value -> viewModel.onRegistrationValueChanged(FieldType.NAME, value) },
+        onSurnameChanged = { value -> viewModel.onRegistrationValueChanged(FieldType.SURNAME, value) },
+        onEmailChanged = { value -> viewModel.onRegistrationValueChanged(FieldType.EMAIL, value) },
+        onPasswordChanged = { value -> viewModel.onRegistrationValueChanged(FieldType.PASSWORD, value) },
     )
 }
 
@@ -85,7 +87,7 @@ fun RegistrationScreen(
 fun RegistrationScreenUi(
     modifier: Modifier,
     userStateModel: UserStateModel,
-    onRegisterClick: () -> Unit,
+    onRegisterClick: (UserStateModel) -> Unit,
     onTermsClick: () -> Unit,
     onPrivacyClick: () -> Unit,
     onNameChanged: (String) -> Unit,
@@ -150,7 +152,7 @@ fun RegistrationScreenUi(
             )
             Spacer(modifier = Modifier.height(18.dp))
             Button(
-                onClick = onRegisterClick,
+                onClick = { onRegisterClick(userStateModel) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -203,5 +205,3 @@ fun RegistrationScreenUi(
         )
     }
 }
-
-
