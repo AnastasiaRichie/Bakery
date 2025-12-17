@@ -4,20 +4,21 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bakery_tm.bakery.common.SessionManager
+import com.bakery_tm.bakery.data.database.entity.toEntity
+import com.bakery_tm.bakery.domain.UserRepository
 import com.bakery_tm.bakery.models.FieldType
-import com.bakery_tm.bakery.models.LoginEvent
+import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class RegistrationViewModel(
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     private val _isLoggedIn = MutableSharedFlow<Boolean>(replay = 0)
@@ -26,8 +27,8 @@ class RegistrationViewModel(
     private val _state = MutableStateFlow(UserStateModel())
     val state: StateFlow<UserStateModel> = _state
 
-    private val _events = MutableSharedFlow<LoginEvent>(replay = 0)
-    val events: SharedFlow<LoginEvent> = _events
+    private val _events = MutableSharedFlow<NavigationEvent>(replay = 0)
+    val events: SharedFlow<NavigationEvent> = _events
 
     init {
         if (sessionManager.isLoggedIn()) {
@@ -37,21 +38,37 @@ class RegistrationViewModel(
         }
     }
 
-    fun onLoginClick() {
+    fun onLoginClick(email: String) {
         viewModelScope.launch {
-            _events.emit(LoginEvent.NavigateToFood)
+            try {
+                _events.emit(NavigationEvent.NavigateToFood)
+            } finally {
+                userRepository.updateIsLoggedIn(true, email)
+            }
+        }
+    }
+
+    fun onRegisterClick(user: UserStateModel) {
+        viewModelScope.launch {
+            try {
+                userRepository.registerUser(user.toEntity(true))
+            } catch (e: Exception) {
+                Log.e("RegistrationViewModel", "onRegisterClick e: $e")
+            } finally {
+                _events.emit(NavigationEvent.NavigateToFood)
+            }
         }
     }
 
     fun onSignUpClick() {
         viewModelScope.launch {
-            _events.emit(LoginEvent.NavigateToRegister)
+            _events.emit(NavigationEvent.NavigateToRegister)
         }
     }
 
     fun onGuestClick() {
         viewModelScope.launch {
-            _events.emit(LoginEvent.NavigateToFood)
+            _events.emit(NavigationEvent.NavigateToFood)
         }
     }
 

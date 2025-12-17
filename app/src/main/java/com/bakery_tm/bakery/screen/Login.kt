@@ -1,7 +1,6 @@
 package com.bakery_tm.bakery.screen
 
 import android.content.Intent
-import android.util.Log
 import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -9,9 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Button
@@ -40,7 +37,7 @@ import androidx.core.net.toUri
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.common.InputField
 import com.bakery_tm.bakery.models.FieldType
-import com.bakery_tm.bakery.models.LoginEvent
+import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -48,20 +45,21 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun LoginScreen(
     modifier: Modifier,
+    viewModel: RegistrationViewModel,
     onFoodNavigation: () -> Unit,
     onSignUpClick: () -> Unit,
     onForgotClicked: () -> Unit,
 ) {
     val context = LocalContext.current
-    val viewModel = koinViewModel<RegistrationViewModel>()
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                LoginEvent.NavigateToFood -> onFoodNavigation()
-                LoginEvent.NavigateToRegister -> onSignUpClick()
-                is LoginEvent.ShowError -> println("Ошибка: ${event.message}")
+                NavigationEvent.NavigateToFood -> onFoodNavigation()
+                NavigationEvent.NavigateToRegister -> onSignUpClick()
+                is NavigationEvent.ShowError -> println("Ошибка: ${event.message}")
+                else -> Unit
             }
         }
     }
@@ -81,18 +79,15 @@ fun LoginScreen(
         onForgotClicked = onForgotClicked,
         onGuestClick = viewModel::onGuestClick,
         onTermsClick = {
-            // TODO(Navigate to rules)
-            val sendIntent = Intent().apply {
-                action = Intent.ACTION_SEND
-                putExtra(Intent.EXTRA_TEXT, "Hello from Compose!")
-                type = "text/plain"
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = "https://axiomabio.com/pdf/test.pdf".toUri()
             }
-            val shareIntent = Intent.createChooser(sendIntent, null)
-            context.startActivity(shareIntent)
+            context.startActivity(intent)
         },
         onPrivacyClick = {
-            //TODO(Navigate to privacy policy)
-            val intent = Intent(Intent.ACTION_DIAL, "tel:123456789".toUri())
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = "https://www.orimi.com/pdf-test.pdf".toUri()
+            }
             context.startActivity(intent)
         },
         onEmailChanged = { value -> viewModel.onLoginValueChanged(FieldType.EMAIL, value) },
@@ -104,7 +99,7 @@ fun LoginScreen(
 fun LoginScreenUi(
     modifier: Modifier,
     userStateModel: UserStateModel,
-    onLoginClick: () -> Unit,
+    onLoginClick: (String) -> Unit,
     onSignUpClick: () -> Unit,
     onForgotClicked: () -> Unit,
     onGuestClick: () -> Unit,
@@ -150,7 +145,9 @@ fun LoginScreenUi(
                 currentRequest = passwordFocusRequester,
             )
             Button(
-                onClick = onLoginClick,
+                onClick = {
+                    onLoginClick(userStateModel.email)
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Black,
                     contentColor = Color.White,
@@ -159,7 +156,6 @@ fun LoginScreenUi(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    //.height(54.dp)
                     .padding(top = 4.dp, start = 4.dp, end = 4.dp),
                 enabled = Patterns.EMAIL_ADDRESS.matcher(userStateModel.email).matches() && userStateModel.password.length >= 4
             ) {
@@ -173,7 +169,6 @@ fun LoginScreenUi(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    //.height(54.dp)
                     .padding(top = 4.dp, start = 4.dp, end = 4.dp),
             ) {
                 Text("Forgot password")
@@ -244,4 +239,3 @@ fun LoginScreenUi(
         }
     }
 }
-

@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.bakery_tm.bakery.data.database.entity.ProductEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProductDao {
@@ -17,5 +18,9 @@ interface ProductDao {
     // Получить доступные позиции пекарни
     @Transaction
     @Query("SELECT * FROM products")
-    suspend fun getAllProducts(): List<ProductEntity>
+    fun getAllProducts(): Flow<List<ProductEntity>>
+
+    // Получить позицию пекарни по id
+    @Query("SELECT * FROM products WHERE productId = :productId")
+    suspend fun getProductById(productId: Long): ProductEntity?
 }
