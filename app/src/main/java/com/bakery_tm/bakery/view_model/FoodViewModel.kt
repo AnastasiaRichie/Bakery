@@ -18,8 +18,6 @@ class FoodViewModel(
     private val _selected = MutableStateFlow<FoodModel?>(null)
     val selected: StateFlow<FoodModel?> = _selected
 
-    private var order: MutableList<FoodModel> = mutableListOf()
-
     init {
         viewModelScope.launch {
             foodRepository.getProducts().collect { _state.emit(it) }
@@ -28,7 +26,7 @@ class FoodViewModel(
 
     fun initSelected(foodId: Long) {
         viewModelScope.launch {
-            val food = _state.value.find { it.id == foodId } ?: return@launch
+            val food = _state.value.find { it.foodId == foodId } ?: return@launch
             _selected.emit(food)
         }
     }

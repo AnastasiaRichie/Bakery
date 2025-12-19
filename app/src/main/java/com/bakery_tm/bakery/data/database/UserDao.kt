@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.bakery_tm.bakery.data.database.entity.UserEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UserDao {
@@ -23,7 +24,7 @@ interface UserDao {
 
     // Получить залогиненого пользователя
     @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
-    suspend fun getLoggedInUser(): UserEntity?
+    fun getLoggedInUser(): Flow<UserEntity?>
 
     @Query("UPDATE users SET name = :name WHERE userId = :userId")
     suspend fun updateUserName(name: String, userId: Int)

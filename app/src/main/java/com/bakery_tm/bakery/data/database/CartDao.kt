@@ -12,14 +12,14 @@ interface CartDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addToCart(item: CartItemEntity): Long
 
-    @Query("UPDATE cart_items SET quantity = :quantity WHERE id = :itemId")
-    suspend fun updateQuantity(itemId: Long, quantity: Int)
+    @Query("UPDATE cart_items SET quantity = :quantity WHERE cartItemId = :cartItemId")
+    suspend fun updateQuantity(cartItemId: Long, quantity: Int)
 
-    @Query("DELETE FROM cart_items WHERE id = :itemId")
-    suspend fun deleteCartItem(itemId: Long)
+    @Query("DELETE FROM cart_items WHERE cartItemId = :cartItemId")
+    suspend fun deleteCartItem(cartItemId: Long)
 
     @Query("SELECT * FROM cart_items WHERE productId = :productId")
-    fun getCart(productId: Long): Flow<CartItemEntity?>
+    fun getCart(productId: Long): Flow<CartItemEntity>
 
     @Query("SELECT * FROM cart_items WHERE userId = :userId")
     fun getCarts(userId: Int): Flow<List<CartItemEntity>>

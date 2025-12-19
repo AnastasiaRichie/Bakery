@@ -3,7 +3,6 @@ package com.bakery_tm.bakery.view_model
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bakery_tm.bakery.common.SessionManager
 import com.bakery_tm.bakery.data.database.entity.toEntity
 import com.bakery_tm.bakery.domain.UserRepository
 import com.bakery_tm.bakery.models.FieldType
@@ -16,13 +15,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class RegistrationViewModel(
-    private val sessionManager: SessionManager,
-    private val userRepository: UserRepository,
-) : ViewModel() {
+class RegistrationViewModel(private val userRepository: UserRepository) : ViewModel() {
 
-    private val _isLoggedIn = MutableSharedFlow<Boolean>(replay = 0)
-    val isLoggedIn: SharedFlow<Boolean> = _isLoggedIn
+    val authState = userRepository.authState
 
     private val _state = MutableStateFlow(UserStateModel())
     val state: StateFlow<UserStateModel> = _state
@@ -30,32 +25,48 @@ class RegistrationViewModel(
     private val _events = MutableSharedFlow<NavigationEvent>(replay = 0)
     val events: SharedFlow<NavigationEvent> = _events
 
-    init {
-        if (sessionManager.isLoggedIn()) {
-            viewModelScope.launch {
-                _isLoggedIn.emit(sessionManager.isLoggedIn())
+    fun onLoginClick(email: String, password: String) {
+        viewModelScope.launch {
+            try {
+                val user = userRepository.getUserByEmail(email)
+                when {
+                    user == null -> {
+                        _events.emit(NavigationEvent.ShowError("Пользователя с таким email не существует!"))
+                        return@launch
+                    }
+                    user.hashedPassword != password.hashCode().toString() -> {
+                        _events.emit(NavigationEvent.ShowError("Проверьте корректность введенных данных!"))
+                        return@launch
+                    }
+                    else -> {
+                        try {
+                            userRepository.updateIsLoggedIn(true, email)
+                        } finally {
+                            _events.emit(NavigationEvent.NavigateToFood)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("RegistrationViewModel", "onLoginClick e: $e")
             }
         }
     }
 
-    fun onLoginClick(email: String) {
+    fun onRegisterClick(model: UserStateModel) {
         viewModelScope.launch {
             try {
-                _events.emit(NavigationEvent.NavigateToFood)
-            } finally {
-                userRepository.updateIsLoggedIn(true, email)
-            }
-        }
-    }
-
-    fun onRegisterClick(user: UserStateModel) {
-        viewModelScope.launch {
-            try {
-                userRepository.registerUser(user.toEntity(true))
+                val user = userRepository.getUserByEmail(model.email)
+                if (user != null) {
+                    _events.emit(NavigationEvent.ShowError("Пользователь с таким email уже существует!"))
+                    return@launch
+                }
+                try {
+                    userRepository.registerUser(model.toEntity(true))
+                } finally {
+                    _events.emit(NavigationEvent.NavigateToFood)
+                }
             } catch (e: Exception) {
                 Log.e("RegistrationViewModel", "onRegisterClick e: $e")
-            } finally {
-                _events.emit(NavigationEvent.NavigateToFood)
             }
         }
     }
@@ -90,20 +101,6 @@ class RegistrationViewModel(
                 FieldType.EMAIL -> it.copy(email = value)
                 FieldType.PASSWORD -> it.copy(password = value)
             }
-        }
-    }
-
-    fun login() {
-        sessionManager.setLoggedIn(true)
-        viewModelScope.launch {
-            _isLoggedIn.emit(true)
-        }
-    }
-
-    fun logout() {
-        sessionManager.setLoggedIn(false)
-        viewModelScope.launch {
-            _isLoggedIn.emit(false)
         }
     }
 }

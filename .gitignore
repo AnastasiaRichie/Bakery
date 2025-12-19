@@ -13,3 +13,16 @@
 .externalNativeBuild
 .cxx
 local.properties
+/app/src/androidTest/java/com/bakery_tm/bakery/ExampleInstrumentedTest.kt
+/app/src/test/java/com/bakery_tm/bakery/ExampleUnitTest.kt
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/.gitignore
+/.idea/AndroidProjectSystem.xml
+/.idea/deploymentTargetSelector.xml
+/.idea/gradle.xml
+/.idea/kotlinc.xml
+/.idea/migrations.xml
+/.idea/misc.xml
+/.idea/runConfigurations.xml
+/.idea/vcs.xml
+/.kotlin/errors/errors-1764703570340.log

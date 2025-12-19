@@ -19,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
@@ -33,39 +35,51 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.common.InputField
+import com.bakery_tm.bakery.domain.AuthState
 import com.bakery_tm.bakery.models.FieldType
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
+import com.bakery_tm.bakery.view_model.OrderViewModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
-import org.koin.androidx.compose.koinViewModel
+import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 
 @Composable
 fun LoginScreen(
     modifier: Modifier,
     viewModel: RegistrationViewModel,
+    shoppingCartViewModel: ShoppingCartViewModel,
+    orderViewModel: OrderViewModel,
     onFoodNavigation: () -> Unit,
     onSignUpClick: () -> Unit,
     onForgotClicked: () -> Unit,
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
-
+    var error by remember { mutableStateOf("") }
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                NavigationEvent.NavigateToFood -> onFoodNavigation()
+                NavigationEvent.NavigateToFood -> {
+                    shoppingCartViewModel.getShoppingCart()
+                    orderViewModel.getOrders()
+                    onFoodNavigation()
+                }
                 NavigationEvent.NavigateToRegister -> onSignUpClick()
-                is NavigationEvent.ShowError -> println("Ошибка: ${event.message}")
+                is NavigationEvent.ShowError -> {
+                    error = event.message
+                    println("Ошибка: ${event.message}")
+                }
                 else -> Unit
             }
         }
     }
     LaunchedEffect(Unit) {
-        viewModel.isLoggedIn.collect { isLoggedIn ->
-            if (isLoggedIn) {
+        viewModel.authState.collect { authState ->
+            if (authState == AuthState.Authenticated) {
                 onFoodNavigation()
             }
         }
@@ -74,6 +88,7 @@ fun LoginScreen(
     LoginScreenUi(
         modifier = modifier,
         userStateModel = state,
+        error = error,
         onLoginClick = viewModel::onLoginClick,
         onSignUpClick = viewModel::onSignUpClick,
         onForgotClicked = onForgotClicked,
@@ -99,7 +114,8 @@ fun LoginScreen(
 fun LoginScreenUi(
     modifier: Modifier,
     userStateModel: UserStateModel,
-    onLoginClick: (String) -> Unit,
+    error: String,
+    onLoginClick: (String, String) -> Unit,
     onSignUpClick: () -> Unit,
     onForgotClicked: () -> Unit,
     onGuestClick: () -> Unit,
@@ -144,9 +160,12 @@ fun LoginScreenUi(
                 onValueChanged = onPasswordChanged,
                 currentRequest = passwordFocusRequester,
             )
+            if (error.isNotEmpty()) {
+                Text(error, fontSize = 12.sp, color = Color.Red)
+            }
             Button(
                 onClick = {
-                    onLoginClick(userStateModel.email)
+                    onLoginClick(userStateModel.email, userStateModel.password)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Black,
@@ -184,7 +203,6 @@ fun LoginScreenUi(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    //.height(54.dp)
                     .padding(top = 4.dp, start = 4.dp, end = 4.dp),
             ) {
                 Text("Sign up")
@@ -225,7 +243,7 @@ fun LoginScreenUi(
             ClickableText(
                 text = annotatedString,
                 style = TextStyle(color = Color.White),
-                modifier = Modifier.padding(top = 16.dp, bottom = 32.dp),
+                modifier = Modifier.padding(top = 16.dp, bottom = 32.dp).padding(horizontal = 4.dp),
                 onClick = { offset ->
                     annotatedString.getStringAnnotations(offset, offset)
                         .firstOrNull()?.let { span ->

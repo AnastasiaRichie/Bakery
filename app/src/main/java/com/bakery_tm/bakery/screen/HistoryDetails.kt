@@ -36,16 +36,14 @@ import androidx.compose.ui.unit.dp
 import com.bakery_tm.bakery.common.mapper.toDomain
 import com.bakery_tm.bakery.data.database.relations.OrderWithItems
 import com.bakery_tm.bakery.models.FoodModel
-import com.bakery_tm.bakery.view_model.FoodViewModel
-import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
-import org.koin.androidx.compose.koinViewModel
+import com.bakery_tm.bakery.view_model.OrderViewModel
 
 @Composable
 fun HistoryDetailsScreen(
-    viewModel: ShoppingCartViewModel,
+    viewModel: OrderViewModel,
     modifier: Modifier,
     orderId: Long,
-    onBackClicked: () -> Unit
+    index: Int,
 ) {
     val order by viewModel.order.collectAsState()
     viewModel.getDetailedOrder(orderId)
@@ -56,7 +54,7 @@ fun HistoryDetailsScreen(
             HistoryDetailsUi(
                 modifier,
                 it,
-                onBackClicked
+                index,
             )
         }
     }
@@ -67,8 +65,9 @@ fun HistoryDetailsScreen(
 fun HistoryDetailsUi(
     modifier: Modifier,
     order: OrderWithItems,
-    onBackClicked: () -> Unit,
+    index: Int,
 ) {
+    val orderSum = order.items.sumOf { it.product.price.replace(" BYN", "").toDouble() * it.orderItem.quantity }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -80,7 +79,7 @@ fun HistoryDetailsUi(
             horizontalArrangement = Arrangement.Start,
         ) {
             Text(
-                text = "Заказ № ${order.order.orderId + 1}",
+                text = "Заказ № ${index + 1}",
                 style = MaterialTheme.typography.titleLarge
             )
         }
@@ -88,7 +87,7 @@ fun HistoryDetailsUi(
     Column(
         Modifier
             .fillMaxSize()
-            .padding(top = 96.dp, bottom = 104.dp)
+            .padding(top = 96.dp, bottom = 48.dp)
             .padding(horizontal = 16.dp)
     ) {
         LazyColumn(modifier = Modifier.weight(1f)) {
@@ -96,6 +95,10 @@ fun HistoryDetailsUi(
                 OrderItem(item.product.toDomain(), item.orderItem.quantity)
                 HorizontalDivider()
             }
+        }
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Сумма заказа:")
+            Text("$orderSum BYN")
         }
     }
 }

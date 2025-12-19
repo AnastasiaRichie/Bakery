@@ -5,15 +5,19 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.bakery_tm.bakery.common.SessionManager
 import com.bakery_tm.bakery.data.FoodRepositoryImpl
+import com.bakery_tm.bakery.data.OrderRepositoryImpl
 import com.bakery_tm.bakery.data.ShoppingCartRepositoryImpl
 import com.bakery_tm.bakery.data.UserRepositoryImpl
 import com.bakery_tm.bakery.data.database.BakeryDatabase
 import com.bakery_tm.bakery.data.database.entity.ProductEntity
 import com.bakery_tm.bakery.domain.FoodRepository
+import com.bakery_tm.bakery.domain.OrderRepository
 import com.bakery_tm.bakery.domain.ShoppingCartRepository
 import com.bakery_tm.bakery.domain.UserRepository
 import com.bakery_tm.bakery.models.FoodType
 import com.bakery_tm.bakery.view_model.FoodViewModel
+import com.bakery_tm.bakery.view_model.ForgotPasswordViewModel
+import com.bakery_tm.bakery.view_model.OrderViewModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
@@ -48,12 +52,15 @@ val appModule = module {
     single { SessionManager(get()) }
     single<UserRepository> { UserRepositoryImpl(get()) }
     single<FoodRepository> { FoodRepositoryImpl(get()) }
-    single<ShoppingCartRepository> { ShoppingCartRepositoryImpl(get(), get(), get()) }
+    single<OrderRepository> { OrderRepositoryImpl(get(), get()) }
+    single<ShoppingCartRepository> { ShoppingCartRepositoryImpl(get(), get()) }
 
-    viewModel { RegistrationViewModel(get(), get()) }
+    viewModel { RegistrationViewModel(get()) }
     viewModel { FoodViewModel(get()) }
     viewModel { UserViewModel(get()) }
+    viewModel { OrderViewModel(get(), get()) }
     viewModel { ShoppingCartViewModel(get(), get()) }
+    viewModel { ForgotPasswordViewModel(get()) }
 }
 
 val predefinedProducts = listOf(

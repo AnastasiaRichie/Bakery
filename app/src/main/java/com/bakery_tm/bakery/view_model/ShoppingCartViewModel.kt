@@ -5,12 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.bakery_tm.bakery.data.database.entity.CartItemEntity
 import com.bakery_tm.bakery.data.database.entity.UserEntity
 import com.bakery_tm.bakery.data.database.relations.CartItemWithProduct
-import com.bakery_tm.bakery.data.database.relations.OrderWithItems
 import com.bakery_tm.bakery.domain.ShoppingCartRepository
 import com.bakery_tm.bakery.domain.UserRepository
-import com.bakery_tm.bakery.models.Address
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 class ShoppingCartViewModel(
@@ -19,37 +18,47 @@ class ShoppingCartViewModel(
 ): ViewModel() {
 
     private var user: UserEntity? = null
-    private var localOrderId: Long? = null
 
-    private val _cartItems = MutableStateFlow<List<CartItemWithProduct>>(listOf())
+    private val _cartItems = MutableStateFlow<List<CartItemWithProduct>>(emptyList())
     val cartItems: StateFlow<List<CartItemWithProduct>> = _cartItems
 
-    private val _cartItem = MutableStateFlow<CartItemEntity?>(null)
-    val cartItem: StateFlow<CartItemEntity?> = _cartItem
+    private val _state = MutableStateFlow(CartState())
+    val state: StateFlow<CartState> = _state
 
-    private val _order = MutableStateFlow<OrderWithItems?>(null)
-    val order: StateFlow<OrderWithItems?> = _order
-
-    private val _orders = MutableStateFlow<List<OrderWithItems>>(emptyList())
-    val orders: StateFlow<List<OrderWithItems>> = _orders
+    private val _cartSum = MutableStateFlow(0.0)
+    val cartSum: StateFlow<Double> = _cartSum
 
     init {
+        getShoppingCart()
+    }
+
+    fun getShoppingCart() {
         viewModelScope.launch {
-            user = userRepository.getLoggedInUser()
+            user = userRepository.getLoggedInUser().firstOrNull()
             launch {
                 user?.userId?.let {
                     shoppingCartRepository.getCartFull(it).collect { _cartItems.value = it }
                 }
             }
             launch {
-                user?.userId?.let { getAllOrders(it) }
+                user?.userId?.let { userId ->
+                    shoppingCartRepository.calculateCartTotal(userId).collect {
+                        _cartSum.value = it
+                    }
+                }
             }
         }
     }
 
+    fun onLogoutClicked() {
+        _state.value = CartState()
+        _cartItems.value = emptyList()
+        user = null
+    }
+
     fun getCartInfoByProductId(productId: Long) {
         viewModelScope.launch {
-            shoppingCartRepository.getCart(productId).collect { _cartItem.value = it }
+            shoppingCartRepository.getCart(productId).collect { _state.value = CartState(false, it) }
         }
     }
 
@@ -73,37 +82,20 @@ class ShoppingCartViewModel(
         }
     }
 
-    fun deleteProduct(itemId: Long) {
+    fun deleteProduct(cartItemId: Long) {
         viewModelScope.launch {
-            shoppingCartRepository.removeProductFromCart(itemId)
+            shoppingCartRepository.removeProductFromCart(cartItemId)
         }
     }
 
-    fun createOrder(address: Address) {
+    fun updateSelectedState() {
         viewModelScope.launch {
-            user?.userId?.let {
-                shoppingCartRepository.createOrder(it, address)
-            }
-        }
-    }
-
-    fun getDetailedOrder(orderId: Long) {
-        updateSelectedOrderId(orderId)
-        viewModelScope.launch {
-            _order.value = shoppingCartRepository.getOrderDetails(orderId)
-        }
-    }
-
-    private fun updateSelectedOrderId(orderId: Long) {
-        if (localOrderId != orderId) {
-            _order.value = null
-            localOrderId = orderId
-        }
-    }
-
-    private suspend fun getAllOrders(userId: Int) {
-        shoppingCartRepository.getAllOrders(userId).collect {
-            _orders.value = it
+            _state.emit(CartState())
         }
     }
 }
+
+data class CartState(
+    val isLoading: Boolean = true,
+    val cartItem: CartItemEntity? = null
+)

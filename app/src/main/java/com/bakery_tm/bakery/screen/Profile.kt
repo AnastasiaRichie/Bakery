@@ -36,6 +36,8 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
+import com.bakery_tm.bakery.view_model.OrderViewModel
+import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
@@ -44,6 +46,8 @@ import android.graphics.Color as AndroidColor
 @Composable
 fun ProfileScreen(
     viewModel: UserViewModel,
+    orderViewModel: OrderViewModel,
+    shoppingCartViewModel: ShoppingCartViewModel,
     modifier: Modifier,
     onLogOutClicked: () -> Unit,
     onLogInClicked: () -> Unit,
@@ -68,6 +72,8 @@ fun ProfileScreen(
         }
         model != null -> {
             ProfileScreenUi(modifier, model,viewModel::onEditClicked) {
+                orderViewModel.onLogoutClicked()
+                shoppingCartViewModel.onLogoutClicked()
                 viewModel.onLogOutClicked(model.email)
             }
         }

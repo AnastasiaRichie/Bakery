@@ -1,7 +1,7 @@
 package com.bakery_tm.bakery.models
 
 data class FoodModel(
-    val id: Long,
+    val foodId: Long,
     val name: String,
     val weight: String,
     val description: String,
