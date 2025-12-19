@@ -1,5 +1,6 @@
 package com.bakery_tm.bakery.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,7 +25,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,35 +49,46 @@ import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 fun FoodDetailsScreen(
     viewModel: FoodViewModel,
     shoppingCartViewModel: ShoppingCartViewModel,
+    isLoggedIn: Boolean,
     modifier: Modifier,
     foodId: Long,
     onBackClicked: () -> Unit
 ) {
-    val state by viewModel.selected.collectAsState()
-    val cartItem by shoppingCartViewModel.cartItem.collectAsState()
+    val selected by viewModel.selected.collectAsState()
+    val state by shoppingCartViewModel.state.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
-    val isResumed = lifecycleOwner.lifecycle.currentStateAsState().value == Lifecycle.State.RESUMED
-
+    val isResumed = lifecycleOwner.lifecycle.currentStateAsState().value == Lifecycle.State.RESUMED || lifecycleOwner.lifecycle.currentStateAsState().value == Lifecycle.State.STARTED
     LaunchedEffect(foodId) {
+        shoppingCartViewModel.getCartInfoByProductId(foodId)
         viewModel.initSelected(foodId)
     }
-    LaunchedEffect(state?.id) {
-        state?.let {
-            shoppingCartViewModel.getCartInfoByProductId(it.id)
-        }
+    val isReady = selected != null && !state.isLoading
+    BackHandler {
+        shoppingCartViewModel.updateSelectedState()
+        onBackClicked()
     }
-    state?.let {
-        FoodDetailsScreenUi(
-            modifier = modifier,
-            isActive = isResumed,
-            model = it,
-            cartItem = cartItem,
-            onQuantityChanged = { add ->
-                shoppingCartViewModel.updateQuantity(add, it.id)
-            },
-            onAddClicked = { shoppingCartViewModel.addProduct(it.id) },
-            onBackClicked = { onBackClicked() },
-        )
+    if (isReady) {
+        selected?.let {
+            FoodDetailsScreenUi(
+                modifier = modifier,
+                isActive = isResumed,
+                isLoggedIn = isLoggedIn,
+                model = it,
+                cartItem = state.cartItem,
+                onQuantityChanged = { add ->
+                    shoppingCartViewModel.updateQuantity(add, selected!!.foodId)
+                },
+                onAddClicked = {
+                    shoppingCartViewModel.addProduct(selected!!.foodId)
+                },
+                onBackClicked = {
+                    shoppingCartViewModel.updateSelectedState()
+                    onBackClicked()
+                }
+            )
+        }
+    } else {
+        LoadingScreen()
     }
 }
 
@@ -82,12 +96,14 @@ fun FoodDetailsScreen(
 fun FoodDetailsScreenUi(
     modifier: Modifier,
     isActive: Boolean,
+    isLoggedIn: Boolean,
     model: FoodModel,
     cartItem: CartItemEntity?,
     onBackClicked: () -> Unit,
     onAddClicked: () -> Unit,
     onQuantityChanged: (Boolean) -> Unit,
 ) {
+    var count by remember { mutableIntStateOf(cartItem?.quantity ?: 0) }
     val context = LocalContext.current
     val foodIconRes = remember(model.foodImageName) {
         context.resources.getIdentifier(model.foodImageName, "drawable", context.packageName)
@@ -154,27 +170,38 @@ fun FoodDetailsScreenUi(
         )
         Text(model.fullDescription, modifier = Modifier.padding(horizontal = 12.dp))
         Spacer(modifier = Modifier.weight(1f))
-        if (cartItem != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(onClick = { onQuantityChanged(false) }, enabled = isActive) { Text("-") }
-                Text(cartItem.quantity.toString())
-                Button(onClick = { onQuantityChanged(true) }, enabled = isActive) { Text("+") }
+        if (isLoggedIn) {
+            if (count != 0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = {
+                            count--
+                            onQuantityChanged(false)
+                        }, enabled = isActive) { Text("-") }
+                    Text(count.toString())
+                    Button(onClick = {
+                        count++
+                        onQuantityChanged(true)
+                    }, enabled = isActive) { Text("+") }
+                }
+                Spacer(Modifier.height(52.dp))
+            } else {
+                Button(
+                    onClick = {
+                        count++
+                        onAddClicked()
+                    },
+                    enabled = isActive,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                ) { Text("Добавить в корзину") }
+                Spacer(Modifier.height(52.dp))
             }
-            Spacer(Modifier.height(52.dp))
-
-        } else {
-            Button(
-                onClick = { onAddClicked() },
-                enabled = isActive,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            ) { Text("Добавить в корзину") }
-            Spacer(Modifier.height(52.dp))
         }
     }
 }

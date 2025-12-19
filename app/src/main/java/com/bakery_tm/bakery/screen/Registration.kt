@@ -19,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.common.InputField
@@ -39,7 +42,6 @@ import com.bakery_tm.bakery.models.FieldType
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
-import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun RegistrationScreen(
@@ -49,12 +51,16 @@ fun RegistrationScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    var error by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 NavigationEvent.NavigateToFood, NavigationEvent.NavigateToRegister -> onSuccessClick()
-                is NavigationEvent.ShowError -> println("Ошибка: ${event.message}")
+                is NavigationEvent.ShowError -> {
+                    error = event.message
+                    println("Ошибка: ${event.message}")
+                }
                 else -> Unit
             }
         }
@@ -63,6 +69,7 @@ fun RegistrationScreen(
     RegistrationScreenUi(
         modifier = modifier,
         userStateModel = state,
+        error = error,
         onRegisterClick = viewModel::onRegisterClick,
         onTermsClick = {
             val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -87,6 +94,7 @@ fun RegistrationScreen(
 fun RegistrationScreenUi(
     modifier: Modifier,
     userStateModel: UserStateModel,
+    error: String,
     onRegisterClick: (UserStateModel) -> Unit,
     onTermsClick: () -> Unit,
     onPrivacyClick: () -> Unit,
@@ -150,6 +158,9 @@ fun RegistrationScreenUi(
                 onValueChanged = onPasswordChanged,
                 currentRequest = passwordFocusRequester,
             )
+            if (error.isNotEmpty()) {
+                Text(error, fontSize = 12.sp, color = Color.Red)
+            }
             Spacer(modifier = Modifier.height(18.dp))
             Button(
                 onClick = { onRegisterClick(userStateModel) },

@@ -9,7 +9,7 @@ data class CartItemWithProduct(
     @Embedded val item: CartItemEntity,
     @Relation(
         parentColumn = "productId",
-        entityColumn = "id"
+        entityColumn = "productId"
     )
     val product: ProductEntity
 )

@@ -132,7 +132,7 @@ fun FoodItem(food: FoodModel, onItemClick: (Long) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { onItemClick(food.id) }
+            .clickable { onItemClick(food.foodId) }
             .background(
                 color = Color.White,
                 shape = RoundedCornerShape(16.dp)

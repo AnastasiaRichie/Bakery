@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -32,6 +31,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.bakery_tm.bakery.domain.AuthState
 import com.bakery_tm.bakery.screen.AccountFieldType
 import com.bakery_tm.bakery.screen.EditScreen
 import com.bakery_tm.bakery.screen.FoodDetailsScreen
@@ -45,6 +45,7 @@ import com.bakery_tm.bakery.screen.RegistrationScreen
 import com.bakery_tm.bakery.screen.ShoppingCartScreen
 import com.bakery_tm.bakery.screen.SplashScreen
 import com.bakery_tm.bakery.view_model.FoodViewModel
+import com.bakery_tm.bakery.view_model.OrderViewModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
@@ -55,22 +56,26 @@ fun AppNavigation(
     userViewModel: UserViewModel = koinViewModel(),
     foodViewModel: FoodViewModel = koinViewModel(),
     shoppingCartViewModel: ShoppingCartViewModel = koinViewModel(),
+    orderViewModel: OrderViewModel = koinViewModel(),
     registrationViewModel: RegistrationViewModel = koinViewModel(),
 ) {
     val navController = rememberNavController()
-    val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
-
+    val authState by userViewModel.authState.collectAsState(null)
     val context = LocalContext.current
-    isLoggedIn?.let {
+    if (authState == AuthState.Loading) {
+        SplashScreen()
+    } else {
         NavHost(
             navController = navController,
-            startDestination = if (it) FOOD else LOGIN
+            startDestination = if (authState == AuthState.Authenticated) FOOD else LOGIN
         ) {
             composable(LOGIN) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     LoginScreen(
                         modifier = Modifier.padding(innerPadding),
                         viewModel = registrationViewModel,
+                        orderViewModel = orderViewModel,
+                        shoppingCartViewModel = shoppingCartViewModel,
                         onFoodNavigation = {
                             navController.navigate(FOOD) {
                                 popUpTo(0) { inclusive = true }
@@ -97,7 +102,9 @@ fun AppNavigation(
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     ForgotPasswordScreen(
                         Modifier.padding(innerPadding)
-                    )
+                    ) {
+                        navController.popBackStack()
+                    }
                 }
             }
 
@@ -156,16 +163,21 @@ fun AppNavigation(
                         }
                         1 -> ShoppingCartScreen(
                             shoppingCartViewModel,
+                            orderViewModel,
+                            authState == AuthState.Authenticated,
                             Modifier.padding(innerPadding)
                         )
                         2 -> HistoryScreen(
                             Modifier.padding(innerPadding),
-                            shoppingCartViewModel
-                        ) {
-                            navController.navigate(historyDetails(it))
+                            orderViewModel,
+                            authState == AuthState.Authenticated
+                        ) { orderId, index ->
+                            navController.navigate(historyDetails(orderId, index))
                         }
                         3 -> ProfileScreen(
                             userViewModel,
+                            orderViewModel,
+                            shoppingCartViewModel,
                             Modifier.padding(innerPadding),
                             onLogOutClicked = {
                                 navController.navigate(LOGIN) {
@@ -195,13 +207,11 @@ fun AppNavigation(
                         FoodDetailsScreen(
                             foodViewModel,
                             shoppingCartViewModel,
-                            Modifier.padding(innerPadding).pointerInput(Unit) {},
+                            authState == AuthState.Authenticated,
+                            Modifier.padding(innerPadding),
                             foodId
                         ) {
-                            navController.popBackStack(
-                                route = FOOD,
-                                inclusive = false
-                            )
+                            navController.popBackStack()
                         }
                     }
                 } ?: run {
@@ -222,26 +232,27 @@ fun AppNavigation(
             }
             composable(
                 HISTORY_DETAILS,
-                arguments = listOf(navArgument(ORDER_ID) { type = NavType.LongType })
+                arguments = listOf(
+                    navArgument(ORDER_ID) { type = NavType.LongType },
+                    navArgument(ORDER_INDEX) { type = NavType.IntType },
+                )
             ) {
                 val orderId = it.arguments?.getLong(ORDER_ID)
+                val index = it.arguments?.getInt(ORDER_INDEX)
                 orderId?.let {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         HistoryDetailsScreen(
-                            shoppingCartViewModel,
-                            Modifier.padding(innerPadding),
-                            it
-                        ) {
-                            navController.popBackStack()
-                        }
+                            orderViewModel,
+                            modifier = Modifier.padding(innerPadding),
+                            orderId = it,
+                            index = index ?: 0,
+                        )
                     }
                 } ?: run {
                     Toast.makeText(context, "Screen not found", Toast.LENGTH_SHORT).show()
                 }
             }
         }
-    } ?: run {
-        SplashScreen()
     }
 }
 
@@ -251,11 +262,12 @@ const val FORGOT_PASS = "forgot"
 const val FOOD = "food"
 const val FOOD_ID = "foodId"
 const val ORDER_ID = "orderId"
+const val ORDER_INDEX = "orderIndex"
 const val FOOD_DETAILS = "food/{foodId}"
 const val EDIT = "edit/{type}"
 const val EDIT_TYPE = "type"
-const val HISTORY_DETAILS = "history/{orderId}"
+const val HISTORY_DETAILS = "history/{orderId}/{orderIndex}"
 
 fun foodDetails(foodId: Long) = "food/$foodId"
 fun editType(type: String) = "edit/$type"
-fun historyDetails(orderId: Long) = "history/$orderId"
+fun historyDetails(orderId: Long, index: Int) = "history/$orderId/$index"

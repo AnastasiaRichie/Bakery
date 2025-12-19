@@ -2,12 +2,17 @@ package com.bakery_tm.bakery.domain
 
 import com.bakery_tm.bakery.data.database.entity.UserEntity
 import com.bakery_tm.bakery.screen.AccountFieldType
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 interface UserRepository {
+    val authState: StateFlow<AuthState>
+
+    suspend fun setAuthState(state: AuthState)
 
     suspend fun isUserLoggedIn(): Boolean
 
-    suspend fun getLoggedInUser(isLogout: Boolean = true): UserEntity?
+    fun getLoggedInUser(): Flow<UserEntity?>
 
     suspend fun getUserByEmail(email: String): UserEntity?
 

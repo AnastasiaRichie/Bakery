@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,24 +35,21 @@ import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.common.dateFormatter
 import com.bakery_tm.bakery.data.database.relations.OrderWithItems
-import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
+import com.bakery_tm.bakery.view_model.OrderViewModel
 
 @Composable
 fun HistoryScreen(
     modifier: Modifier,
-    viewModel: ShoppingCartViewModel,
-    onOrderClicked: (Long) -> Unit
+    viewModel: OrderViewModel,
+    isLoggedIn: Boolean,
+    onOrderClicked: (Long, Int) -> Unit
 ) {
     val orders by viewModel.orders.collectAsState()
 
-    if (orders.isEmpty()) {
-        EmptyHistoryScreenUi(modifier)
-    } else {
-        HistoryScreenUi(
-            modifier,
-            orders,
-            onOrderClicked
-        )
+    when {
+        !isLoggedIn -> UnregisteredScreenUi(modifier)
+        orders.isEmpty() -> EmptyHistoryScreenUi(modifier)
+        else -> HistoryScreenUi(modifier, orders, onOrderClicked)
     }
 }
 
@@ -60,7 +57,7 @@ fun HistoryScreen(
 fun HistoryScreenUi(
     modifier: Modifier,
     orders: List<OrderWithItems>,
-    onOrderClicked: (Long) -> Unit
+    onOrderClicked: (Long, Int) -> Unit
 ) {
     Column(
         modifier = modifier
@@ -96,36 +93,36 @@ fun HistoryScreenUi(
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(orders) {
-                HistoryItem(it, onOrderClicked)
+            itemsIndexed(orders) { index, order ->
+                HistoryItem(order, onOrderClicked, index)
             }
         }
     }
 }
 
 @Composable
-fun HistoryItem(order: OrderWithItems, onOrderClicked: (Long) -> Unit) {
+fun HistoryItem(order: OrderWithItems, onOrderClicked: (Long, Int) -> Unit, index: Int) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(0xFFE5E5E5), shape = RoundedCornerShape(20.dp))
             .padding(8.dp)
-            .clickable { onOrderClicked(order.order.orderId) }
+            .clickable { onOrderClicked(order.order.orderId, index) }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
+                text = "Заказ №${index + 1}",
+                fontSize = 13.sp,
+                color = Color.Gray
+            )
+            Text(
                 text = dateFormatter(order.order.date).orEmpty(),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
-            )
-            Text(
-                text = "Sum:",
-                fontSize = 13.sp,
-                color = Color.Gray
             )
         }
 
@@ -137,24 +134,21 @@ fun HistoryItem(order: OrderWithItems, onOrderClicked: (Long) -> Unit) {
         )
 
         Spacer(modifier = Modifier.height(4.dp))
-
-        Row(
+        Text(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+            text = "Заказ: ${order.items.map { it.product.name }}",
+            fontSize = 12.sp,
+            color = Color.Gray,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
             Text(
-                text = "Заказ: ${order.items.map { it.product.name }}",
+                text = "Состав заказа: ${order.items.map { it.product.name }}",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = "?",
-                fontSize = 13.sp,
-                color = Color.Gray
-            )
-        }
     }
 }
 

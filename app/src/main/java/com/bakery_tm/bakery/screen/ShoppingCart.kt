@@ -50,24 +50,28 @@ import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.data.database.relations.CartItemWithProduct
 import com.bakery_tm.bakery.models.Address
+import com.bakery_tm.bakery.view_model.OrderViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 
 @Composable
 fun ShoppingCartScreen(
     viewModel: ShoppingCartViewModel,
+    orderViewModel: OrderViewModel,
+    isLoggedIn: Boolean,
     modifier: Modifier,
 ) {
     val cartItems by viewModel.cartItems.collectAsState()
-    if (cartItems.isEmpty()) {
-        EmptyShoppingCartUi(modifier)
-    } else {
-        ShoppingCartScreenUi(
+    val cartSum by viewModel.cartSum.collectAsState()
+    when {
+        !isLoggedIn -> UnregisteredScreenUi(modifier)
+        cartItems.isEmpty() -> EmptyShoppingCartUi(modifier)
+        else -> ShoppingCartScreenUi(
             modifier = modifier,
             cartItems = cartItems,
+            cartSum = cartSum,
             onDeleteClicked = { viewModel.deleteProduct(it) },
-            onCreateOrder = { address -> viewModel.createOrder(address) },
-        ) { add, productId ->
-            viewModel.updateQuantity(add, productId) }
+            onCreateOrder = { address -> orderViewModel.createOrder(address) },
+        ) { add, productId -> viewModel.updateQuantity(add, productId) }
     }
 }
 val mockedAddresses = listOf(
@@ -82,6 +86,7 @@ val mockedAddresses = listOf(
 fun ShoppingCartScreenUi(
     modifier: Modifier,
     cartItems: List<CartItemWithProduct>,
+    cartSum: Double,
     onDeleteClicked: (Long) -> Unit,
     onCreateOrder: (Address) -> Unit,
     onQuantityChanged: (Boolean, Long) -> Unit,
@@ -115,6 +120,10 @@ fun ShoppingCartScreenUi(
             }
         }
         ChooseAddressForm(mockedAddresses, onCreateOrder)
+        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Итого:")
+            Text("$cartSum BYN")
+        }
     }
 }
 
@@ -164,7 +173,7 @@ fun AddFoodItem(
                 .width(36.dp)
                 .height(36.dp)
                 .padding(4.dp)
-                .clickable { onDeleteClicked(item.item.id) },
+                .clickable { onDeleteClicked(item.item.cartItemId) },
             colorFilter = ColorFilter.tint(Color.White),
             painter = painterResource(R.drawable.ic_trash),
             contentDescription = "Delete"

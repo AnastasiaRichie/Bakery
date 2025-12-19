@@ -3,6 +3,7 @@ package com.bakery_tm.bakery.view_model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bakery_tm.bakery.data.database.entity.toModel
+import com.bakery_tm.bakery.domain.AuthState
 import com.bakery_tm.bakery.domain.UserRepository
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserState
@@ -11,7 +12,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -19,8 +20,8 @@ class UserViewModel(
     private val userRepository: UserRepository,
 ) : ViewModel() {
 
-    private val _isLoggedIn = MutableStateFlow<Boolean?>(null)
-    val isLoggedIn = _isLoggedIn.asStateFlow()
+    val authState = userRepository.authState
+
     private val _state = MutableStateFlow(UserState())
     val state: StateFlow<UserState> = _state
     private val _events = MutableSharedFlow<NavigationEvent>(replay = 0)
@@ -36,7 +37,7 @@ class UserViewModel(
                 _events.emit(NavigationEvent.NavigateToRegister)
                 userRepository.updateIsLoggedIn(false, email)
             } finally {
-                getUserData(true)
+                getUserData()
             }
         }
     }
@@ -47,16 +48,23 @@ class UserViewModel(
         }
     }
 
-    private fun getUserData(isLogout: Boolean = false) {
+    private fun getUserData() {
         viewModelScope.launch {
             try {
                 _state.update { state -> state.copy(isLoading = true) }
-                val user = userRepository.getLoggedInUser(isLogout)
-                _state.update { state -> state.copy(userStateModel = user?.toModel()) }
+                userRepository.getLoggedInUser().collect { user ->
+                    _state.update { state -> state.copy(userStateModel = user?.toModel(), isLoading = false) }
+                    userRepository.setAuthState(
+                        if (user != null) {
+                            AuthState.Authenticated
+                        } else {
+                            AuthState.Unauthenticated
+                        }
+                    )
+                }
             } catch (e: Exception) {
-                _isLoggedIn.value = false
+                userRepository.setAuthState(AuthState.Unauthenticated)
             } finally {
-                _isLoggedIn.value = userRepository.isUserLoggedIn()
                 _state.update { state -> state.copy(isLoading = false) }
             }
         }
@@ -69,39 +77,9 @@ class UserViewModel(
                 _events.emit(NavigationEvent.NavigateBack)
 
             } finally {
-                val model = userRepository.getLoggedInUser()?.toModel()
+                val model = userRepository.getLoggedInUser().firstOrNull()?.toModel()
                 _state.update { state -> state.copy(userStateModel = model) }
             }
         }
-    }
-
-    fun getOrders(
-        userId: Int
-    ): List<String> {
-        //getLocalsFromSharedPrefs
-        //updateLocalsWithServer
-        //date, location, cost, description (состав)
-
-        return emptyList()
-    }
-
-    fun registrate(
-        model: String
-    ) {
-        //repoToServer -> if success save data locally
-    }
-
-    fun updateName() {
-        //repo Update Name
-        //sharedPref Update Name
-    }
-
-    fun updateSurname() {
-        //repo Update Surname
-        //sharedPref Update Surname
-    }
-
-    fun forgetPassword() {
-        //repoToServer try Update -> if success save pass encrypted locally
     }
 }
