@@ -47,6 +47,7 @@ import com.bakery_tm.bakery.view_model.RegistrationViewModel
 fun RegistrationScreen(
     modifier: Modifier,
     viewModel: RegistrationViewModel,
+    onBack: () -> Unit,
     onSuccessClick: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()

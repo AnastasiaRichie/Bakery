@@ -26,6 +26,7 @@ fun InputField(
     currentRequest: FocusRequester,
     padding: Int = 0,
     nextRequest: FocusRequester? = null,
+    placeholder: @Composable (() -> Unit)? = null
 ) {
     val focusManager = LocalFocusManager.current
     OutlinedTextField(
@@ -34,6 +35,7 @@ fun InputField(
         label = { Text(label) },
         modifier = Modifier.fillMaxWidth().focusRequester(currentRequest).padding(padding.dp),
         singleLine = true,
+        placeholder = placeholder,
         visualTransformation = visualTransformation ?: VisualTransformation.None,
         keyboardOptions = KeyboardOptions(
             keyboardType = type ?: KeyboardType.Text,

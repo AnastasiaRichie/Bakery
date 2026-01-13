@@ -89,8 +89,9 @@ fun AppNavigation(
             composable(REGISTRATION) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     RegistrationScreen(
-                        Modifier.padding(innerPadding),
+                        modifier = Modifier.padding(innerPadding),
                         viewModel = registrationViewModel,
+                        onBack = { navController.popBackStack() },
                     ) {
                         navController.navigate(FOOD) {
                             popUpTo(0) { inclusive = true }
@@ -158,38 +159,38 @@ fun AppNavigation(
                     }
                 ) { innerPadding ->
                     when (selectedTabIndex) {
-                        0 -> FoodScreen(foodViewModel) {
-                            navController.navigate(foodDetails(it))
-                        }
+                        0 -> FoodScreen(
+                            modifier = Modifier.padding(innerPadding),
+                            viewModel = foodViewModel,
+                            isLoggedIn = authState == AuthState.Authenticated,
+                            onFoodClick = { navController.navigate(foodDetails(it)) },
+                            onRegistrateClick = { navController.navigate(REGISTRATION) }
+                        )
                         1 -> ShoppingCartScreen(
-                            shoppingCartViewModel,
-                            orderViewModel,
-                            authState == AuthState.Authenticated,
-                            Modifier.padding(innerPadding)
+                            viewModel = shoppingCartViewModel,
+                            orderViewModel = orderViewModel,
+                            isLoggedIn = authState == AuthState.Authenticated,
+                            modifier = Modifier.padding(innerPadding),
                         )
                         2 -> HistoryScreen(
-                            Modifier.padding(innerPadding),
-                            orderViewModel,
-                            authState == AuthState.Authenticated
+                            modifier = Modifier.padding(innerPadding),
+                            viewModel = orderViewModel,
+                            isLoggedIn = authState == AuthState.Authenticated
                         ) { orderId, index ->
                             navController.navigate(historyDetails(orderId, index))
                         }
                         3 -> ProfileScreen(
-                            userViewModel,
-                            orderViewModel,
-                            shoppingCartViewModel,
-                            Modifier.padding(innerPadding),
+                            viewModel = userViewModel,
+                            orderViewModel = orderViewModel,
+                            shoppingCartViewModel = shoppingCartViewModel,
+                            modifier = Modifier.padding(innerPadding),
                             onLogOutClicked = {
                                 navController.navigate(LOGIN) {
                                     navController.popBackStack()
                                 }
                             },
-                            onLogInClicked = {
-                                navController.navigate(LOGIN)
-                            },
-                            onRegisterClicked = {
-                                navController.navigate(REGISTRATION)
-                            },
+                            onLogInClicked = { navController.navigate(LOGIN) },
+                            onRegisterClicked = { navController.navigate(REGISTRATION) },
                             onEditClicked = { type ->
                                 navController.navigate(editType(type.name))
                             }
@@ -205,14 +206,12 @@ fun AppNavigation(
                 foodId?.let {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         FoodDetailsScreen(
-                            foodViewModel,
-                            shoppingCartViewModel,
-                            authState == AuthState.Authenticated,
-                            Modifier.padding(innerPadding),
-                            foodId
-                        ) {
-                            navController.popBackStack()
-                        }
+                            viewModel = foodViewModel,
+                            shoppingCartViewModel = shoppingCartViewModel,
+                            isLoggedIn = authState == AuthState.Authenticated,
+                            modifier = Modifier.padding(innerPadding),
+                            foodId = foodId
+                        ) { navController.popBackStack() }
                     }
                 } ?: run {
                     Toast.makeText(context, "Screen not found", Toast.LENGTH_SHORT).show()
