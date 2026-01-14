@@ -6,6 +6,7 @@ data class FoodModel(
     val weight: String,
     val description: String,
     val fullDescription: String,
+    val allergens: String,
     val price: String,
     val foodImageName: String,
     val foodType: FoodType = FoodType.FLOUR,

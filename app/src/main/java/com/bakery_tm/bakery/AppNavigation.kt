@@ -92,6 +92,7 @@ fun AppNavigation(
                         modifier = Modifier.padding(innerPadding),
                         viewModel = registrationViewModel,
                         onBack = { navController.popBackStack() },
+                        onLoginClick = { navController.navigate(LOGIN) },
                     ) {
                         navController.navigate(FOOD) {
                             popUpTo(0) { inclusive = true }
@@ -162,20 +163,24 @@ fun AppNavigation(
                         0 -> FoodScreen(
                             modifier = Modifier.padding(innerPadding),
                             viewModel = foodViewModel,
+                            userViewModel = userViewModel,
                             isLoggedIn = authState == AuthState.Authenticated,
                             onFoodClick = { navController.navigate(foodDetails(it)) },
-                            onRegistrateClick = { navController.navigate(REGISTRATION) }
+                            onCartClicked = { selectedTabIndex = 1 },
+                            onRegisterClick = { navController.navigate(REGISTRATION) }
                         )
                         1 -> ShoppingCartScreen(
                             viewModel = shoppingCartViewModel,
                             orderViewModel = orderViewModel,
                             isLoggedIn = authState == AuthState.Authenticated,
                             modifier = Modifier.padding(innerPadding),
-                        )
+                            onToFoodListNavigate = { selectedTabIndex = 0 }
+                        ) { navController.navigate(LOGIN) }
                         2 -> HistoryScreen(
                             modifier = Modifier.padding(innerPadding),
                             viewModel = orderViewModel,
-                            isLoggedIn = authState == AuthState.Authenticated
+                            isLoggedIn = authState == AuthState.Authenticated,
+                            onLoginClicked = { navController.navigate(LOGIN) },
                         ) { orderId, index ->
                             navController.navigate(historyDetails(orderId, index))
                         }
@@ -191,8 +196,8 @@ fun AppNavigation(
                             },
                             onLogInClicked = { navController.navigate(LOGIN) },
                             onRegisterClicked = { navController.navigate(REGISTRATION) },
-                            onEditClicked = { type ->
-                                navController.navigate(editType(type.name))
+                            onEditClicked = { //type ->
+                                //navController.navigate(editType(type.name))
                             }
                         )
                     }

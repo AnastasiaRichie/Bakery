@@ -6,12 +6,10 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.util.Patterns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,10 +17,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -68,7 +64,7 @@ fun ForgotPasswordScreen(
     onBackClicked: () -> Unit
 ) {
     val dark = isSystemInDarkTheme()
-    val bg = if (dark) BackgroundDark else BackgroundLight
+    val background = if (dark) BackgroundDark else BackgroundLight
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {}
@@ -88,6 +84,12 @@ fun ForgotPasswordScreen(
     }
     ForgotPasswordScreenUi(
         modifier = modifier,
+        email = state,
+        dark = dark,
+        userNotExistsEvent = userNotExistsEvent,
+        background = background,
+        onEmailChanged = { email -> viewModel.onEmailChanged(email) },
+        onSendClick = { viewModel.isEmailExists() },
         onBack = onBackClicked,
     )
 }
@@ -95,27 +97,15 @@ fun ForgotPasswordScreen(
 @Composable
 fun ForgotPasswordScreenUi(
     modifier: Modifier,
-    onBack: () -> Unit
+    email: String,
+    dark: Boolean,
+    userNotExistsEvent: Boolean,
+    background: Color,
+    onEmailChanged: (String) -> Unit,
+    onSendClick: () -> Unit,
+    onBack: () -> Unit,
 ) {
-    val viewModel = koinViewModel<ForgotPasswordViewModel>()
-    val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) {}
-    LaunchedEffect(Unit) {
-        launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
-    LaunchedEffect(Unit) {
-        viewModel.sendNotification.collect { pass ->
-            showCopyNotification(context, pass)
-            onBack()
-        }
-    }
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
     val emailFocusRequester = remember { FocusRequester() }
-    val state by viewModel.state.collectAsState()
-    val userNotExistsEvent by viewModel.userNotExistsEvent.collectAsState(false)
 
     Box(modifier
         .fillMaxSize()
@@ -150,10 +140,10 @@ fun ForgotPasswordScreenUi(
             )
 
             EmailField(
-                value = state,
-                onEmailChanged = { email -> viewModel.onEmailChanged(email) },
+                value = email,
+                onEmailChanged = { email -> onEmailChanged(email) },
                 emailFocusRequester = emailFocusRequester,
-                onClear = { viewModel.onEmailChanged("") }
+                onClear = { onEmailChanged("") }
             )
 
             if (userNotExistsEvent) {
@@ -179,7 +169,7 @@ fun ForgotPasswordScreenUi(
 
             Column(Modifier.padding(16.dp)) {
                 Button(
-                    onClick = { viewModel.isEmailExists() },
+                    onClick = onSendClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
