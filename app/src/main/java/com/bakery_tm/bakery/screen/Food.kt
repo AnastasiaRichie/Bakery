@@ -19,13 +19,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -63,23 +60,30 @@ import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.models.FoodModel
 import com.bakery_tm.bakery.models.FoodType
 import com.bakery_tm.bakery.view_model.FoodViewModel
+import com.bakery_tm.bakery.view_model.UserViewModel
+import java.time.LocalTime
 
 @Composable
 fun FoodScreen(
     modifier: Modifier,
     isLoggedIn: Boolean,
     viewModel: FoodViewModel,
+    userViewModel: UserViewModel,
     onFoodClick: (Long) -> Unit,
-    onRegistrateClick: () -> Unit,
+    onCartClicked: () -> Unit,
+    onRegisterClick: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
+    val userState by userViewModel.state.collectAsState()
 
     FoodScreenUi(
         modifier,
         state,
-        isLoggedIn,
+        isLoggedIn = isLoggedIn,
+        user = userState.userStateModel?.name.orEmpty() + " " + userState.userStateModel?.surname,
         onFoodClick,
-        onRegistrateClick
+        onCartClicked,
+        onRegisterClick
     )
 }
 
@@ -88,8 +92,10 @@ fun FoodScreenUi(
     modifier: Modifier,
     foodList: List<FoodModel>,
     isLoggedIn: Boolean,
+    user: String,
     onFoodClick: (Long) -> Unit,
-    onRegistrateClick: () -> Unit,
+    onCartClicked: () -> Unit,
+    onRegisterClick: () -> Unit,
 ) {
     val dark = isSystemInDarkTheme()
     val background = if (dark) BackgroundDark else BackgroundLight
@@ -98,9 +104,9 @@ fun FoodScreenUi(
         .fillMaxSize()
         .background(background)) {
         Column {
-            DashboardTopBar(isLoggedIn)
+            DashboardTopBar(isLoggedIn, user)
             if (!isLoggedIn) {
-                ProductGuestBanner(onRegistrateClick)
+                ProductGuestBanner(onRegisterClick)
             }
             val tabs = listOf("All", "Flours", "Drinks")
             Row(
@@ -153,7 +159,7 @@ fun FoodScreenUi(
         }
         CartFab(2, modifier = Modifier
             .align(Alignment.BottomEnd)
-            .padding(12.dp))
+            .padding(12.dp), onCartClicked = onCartClicked)
     }
 }
 
@@ -296,10 +302,10 @@ fun ProductCard(product: FoodModel, onProductClick: (Long) -> Unit) {
 }
 
 @Composable
-fun CartFab(count: Int, modifier: Modifier) {
+fun CartFab(count: Int, modifier: Modifier, onCartClicked: () -> Unit) {
     Box(modifier = modifier) {
         FloatingActionButton(
-            onClick = {},
+            onClick = onCartClicked,
             containerColor = Primary
         ) {
             Icon(Icons.Default.ShoppingCart, null, tint = BackgroundDark)
@@ -328,7 +334,7 @@ fun CartFab(count: Int, modifier: Modifier) {
 }
 
 @Composable
-fun ProductGuestBanner(onRegistrateClick: () -> Unit) {
+fun ProductGuestBanner(onRegisterClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -340,7 +346,7 @@ fun ProductGuestBanner(onRegistrateClick: () -> Unit) {
         Column(modifier = Modifier.weight(1f)) {
             Text("Присоединяйтесь к программе лояльности", color = Primary, fontWeight = FontWeight.Bold)
             Text("Зарабатывайте баллы за каждую покупку!", fontSize = 12.sp)
-            Button(onClick = onRegistrateClick, colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
+            Button(onClick = onRegisterClick, colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
                 Text("Зарегистрироваться", color = BackgroundDark)
             }
         }
@@ -362,25 +368,20 @@ fun SearchBar() {
 }
 
 @Composable
-fun DashboardTopBar(isLoggedIn: Boolean) {
+fun DashboardTopBar(isLoggedIn: Boolean, user: String) {
+    val greeting = remember { getGreeting() }
     Column {
         Row(
             Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Primary)
-                )
+                Box(Modifier.size(40.dp).clip(CircleShape).background(Primary))
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    // TODO (Обработка времени)
-                    Text("Доброе утро!", fontSize = 12.sp, color = Color.Gray)
+                    Text(greeting, fontSize = 12.sp, color = Color.Gray)
                     if (isLoggedIn) {
-                        Text("Alex Johnson", fontWeight = FontWeight.Bold)
+                        Text(user, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -390,5 +391,15 @@ fun DashboardTopBar(isLoggedIn: Boolean) {
             }
         }
         SearchBar()
+    }
+}
+
+fun getGreeting(): String {
+    val hour = LocalTime.now().hour
+    return when (hour) {
+        in 5..11 -> "Доброе утро!"
+        in 12..16 -> "Добрый день!"
+        in 17..21 -> "Добрый вечер!"
+        else -> "Доброй ночи!"
     }
 }

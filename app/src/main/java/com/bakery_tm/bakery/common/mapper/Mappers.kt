@@ -10,6 +10,7 @@ fun ProductEntity.toDomain(): FoodModel{
         weight = weight,
         description = description,
         fullDescription = fullDescription,
+        allergens = allergens,
         price = price,
         foodType = foodType,
         foodImageName = foodImageName
