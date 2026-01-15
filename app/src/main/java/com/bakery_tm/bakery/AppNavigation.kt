@@ -179,7 +179,8 @@ fun AppNavigation(
                         2 -> HistoryScreen(
                             modifier = Modifier.padding(innerPadding),
                             viewModel = orderViewModel,
-                            isLoggedIn = authState == AuthState.Authenticated
+                            isLoggedIn = authState == AuthState.Authenticated,
+                            onLoginClicked = { navController.navigate(LOGIN) },
                         ) { orderId, index ->
                             navController.navigate(historyDetails(orderId, index))
                         }

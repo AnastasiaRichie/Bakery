@@ -133,7 +133,8 @@ fun ShoppingCartScreenUi(
                 if (cartItems.isEmpty()) {
                     item { EmptyState(onToFoodListNavigate) }
                 } else {
-                    items(cartItems) { item -> CartItemRow(item, onQuantityChanged) }
+                    //TODO (divider)
+                    items(cartItems) { item -> CartItemRow(item, onQuantityChanged, onDeleteClicked) }
                 }
             }
         }
@@ -313,7 +314,6 @@ fun GuestBanner(onLoginClick: () -> Unit) {
                 }
                 Text("Синхронизируйте корзину для сбора бонусов и получения заказа", fontSize = 13.sp, color = Color.Gray)
             }
-
         }
     }
 }
@@ -401,9 +401,9 @@ fun SectionHeader(count: Int) {
 @Composable
 fun CartItemRow(
     item: CartItemWithProduct,
-    onQuantityChanged: (Boolean, Long) -> Unit
+    onQuantityChanged: (Boolean, Long) -> Unit,
+    onDeleteClicked: (Long) -> Unit,
 ) {
-
     Row(
         Modifier
             .fillMaxWidth()
@@ -412,10 +412,9 @@ fun CartItemRow(
     ) {
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Log.e("qwe", "CartItemRow item.product: " + item.product)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(item.product.name, fontWeight = FontWeight.Bold)
-                Text("$${"%.2f".format(item.product.price.replace(" BYN", "").toDouble())}", fontWeight = FontWeight.Bold)
+                Text(item.product.price, fontWeight = FontWeight.Bold)
             }
             Text(item.product.description, fontSize = 13.sp, color = Color.Gray)
             Row(
@@ -425,8 +424,13 @@ fun CartItemRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                QuantitySelector(item = item, onQuantityChanged = onQuantityChanged)
-                IconButton(onClick = {}) {
+                CounterWithTextButtons(
+                    modifier = Modifier.padding(4.dp),
+                    initialValue = item.item.quantity,
+                    onValueChanged = { onQuantityChanged(it, item.product.productId) }
+                )
+                //QuantitySelector(item = item, onQuantityChanged = onQuantityChanged)
+                IconButton(onClick = { onDeleteClicked(item.item.cartItemId) }) {
                     Icon(Icons.Default.Delete, null, tint = Color.Red)
                 }
             }
@@ -481,6 +485,7 @@ fun CheckoutPanel(
     modifier: Modifier,
     onCreateOrder: () -> Unit
 ) {
+    //TODO(скругленные углы и рамка)
     Column(
         modifier
             .fillMaxWidth()
@@ -495,7 +500,7 @@ fun CheckoutPanel(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Primary)
+            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundDark)
         ) {
             Text("Заказать", fontSize = 18.sp)
         }

@@ -50,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
@@ -108,7 +109,7 @@ fun FoodScreenUi(
             if (!isLoggedIn) {
                 ProductGuestBanner(onRegisterClick)
             }
-            val tabs = listOf("All", "Flours", "Drinks")
+            val tabs = listOf("Все", "Еда", "Напитки")
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -121,12 +122,12 @@ fun FoodScreenUi(
                             .padding(end = 8.dp)
                             .clip(RoundedCornerShape(32.dp))
                             .background(
-                                color = if (isSelected) Color.Black
+                                color = if (isSelected) Primary.copy(alpha = 0.1f)
                                 else Color.White
                             )
                             .border(
                                 width = 0.5.dp,
-                                color = if (isSelected) Color.Black
+                                color = if (isSelected) InputDark
                                 else Color.Gray,
                                 shape = RoundedCornerShape(32.dp)
                             )
@@ -136,7 +137,7 @@ fun FoodScreenUi(
                     ) {
                         Text(
                             text = title,
-                            color = if (isSelected) Color.White else Color.DarkGray
+                            color = if (isSelected) Color.White else BackgroundDark
                         )
                     }
                 }
@@ -154,7 +155,7 @@ fun FoodScreenUi(
                         1 -> foodList.filter { it.foodType == FoodType.FLOUR }
                         2 -> foodList.filter { it.foodType == FoodType.DRINK }
                         else -> foodList
-                    }) { ProductCard(product = it, onProductClick = onFoodClick) }
+                    }) { ProductCard(product = it, onProductClick = onFoodClick, isLoggedIn = isLoggedIn) }
             }
         }
         CartFab(2, modifier = Modifier
@@ -228,7 +229,7 @@ fun FoodItem(food: FoodModel, onItemClick: (Long) -> Unit) {
 }
 
 @Composable
-fun ProductCard(product: FoodModel, onProductClick: (Long) -> Unit) {
+fun ProductCard(product: FoodModel, onProductClick: (Long) -> Unit, isLoggedIn: Boolean) {
     val context = LocalContext.current
     val foodIconRes = remember(product.foodImageName) {
         context.resources.getIdentifier(product.foodImageName, "drawable", context.packageName)
@@ -239,19 +240,12 @@ fun ProductCard(product: FoodModel, onProductClick: (Long) -> Unit) {
                 .aspectRatio(4f / 3f)
                 .clip(RoundedCornerShape(16.dp))
         ) {
-//            AsyncImage(
-//                model = product.imageUrl,
-//                contentDescription = null,
-//                contentScale = ContentScale.Crop,
-//                modifier = Modifier.fillMaxSize()
-//            )
             if (foodIconRes != 0) {
                 Image(
                     painter = painterResource(foodIconRes),
-                    modifier = Modifier
-                        .width(64.dp)
-                        .height(64.dp)
-                        .padding(end = 16.dp, start = 8.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alignment = Alignment.Center,
                     contentDescription = null
                 )
             } else {
@@ -266,18 +260,17 @@ fun ProductCard(product: FoodModel, onProductClick: (Long) -> Unit) {
                 }
             }
             //TODO (обработать название)
-            Image(painter = painterResource(R.drawable.croissant), contentDescription = null)
+            //Image(painter = painterResource(R.drawable.croissant), contentDescription = null)
 
-            IconButton(
-                onClick = {},
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-            ) {
-                Icon(Icons.Default.FavoriteBorder, null, tint = Color.White)
-            }
+//            IconButton(
+//                onClick = {},
+//                modifier = Modifier
+//                    .align(Alignment.TopEnd)
+//                    .padding(8.dp)
+//            ) {
+//                Icon(Icons.Default.FavoriteBorder, null, tint = Color.White)
+//            }
         }
-
         Row(
             Modifier.padding(4.dp),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -287,15 +280,16 @@ fun ProductCard(product: FoodModel, onProductClick: (Long) -> Unit) {
                 Text(product.foodType.name, fontSize = 12.sp, color = Color.Gray)
                 Text(product.price, color = Primary, fontWeight = FontWeight.Bold)
             }
-
-            IconButton(
-                onClick = {},
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(Primary, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 4.dp)
-            ) {
-                Icon(Icons.Default.Add, null, tint = BackgroundDark)
+            if (isLoggedIn) {
+                IconButton(
+                    onClick = {},
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Primary, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 4.dp)
+                ) {
+                    Icon(Icons.Default.Add, null, tint = BackgroundDark)
+                }
             }
         }
     }
@@ -338,7 +332,8 @@ fun ProductGuestBanner(onRegisterClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp)
+            .padding(top = 12.dp)
             .background(Primary.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween

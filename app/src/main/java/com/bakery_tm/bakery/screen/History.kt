@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.common.dateFormatter
-import com.bakery_tm.bakery.data.database.entity.OrderEntity
 import com.bakery_tm.bakery.data.database.relations.OrderWithItems
 import com.bakery_tm.bakery.view_model.OrderViewModel
 
@@ -48,13 +47,14 @@ fun HistoryScreen(
     modifier: Modifier,
     viewModel: OrderViewModel,
     isLoggedIn: Boolean,
+    onLoginClicked: () -> Unit,
     onOrderClicked: (Long, Int) -> Unit
 ) {
     val orders by viewModel.orders.collectAsState()
 
     when {
-//        !isLoggedIn -> UnregisteredScreenUi(modifier)
-//        orders.isEmpty() -> EmptyHistoryScreenUi(modifier)
+        !isLoggedIn -> UnregisteredScreenUi(modifier, onLoginClicked)
+        orders.isEmpty() -> EmptyHistoryScreenUi(modifier)
         else -> HistoryScreenUi(modifier, orders, onOrderClicked)
     }
 }

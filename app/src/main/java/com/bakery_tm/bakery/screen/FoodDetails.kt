@@ -3,6 +3,7 @@ package com.bakery_tm.bakery.screen
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
@@ -56,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -221,9 +224,9 @@ fun HeroImage(@DrawableRes icon: Int, onBack: () -> Unit) {
         if (icon != 0) {
             Image(
                 painter = painterResource(icon),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(end = 16.dp, start = 8.dp),
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.BottomCenter,
+                modifier = Modifier.fillMaxSize(),
                 contentDescription = null
             )
         } else {
@@ -311,13 +314,16 @@ fun AllergensSection(list: String) {
     Text(list)
     ExpandableSection(
         icon = Icons.Default.Warning,
-        title = "Allergens"
+        iconColor = Color.Yellow,
+        title = "Аллергены"
     ) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             list.forEach {
                 AssistChip(
                     onClick = {},
-                    label = { Text(it.uppercase()) }
+                    colors = AssistChipDefaults.assistChipColors(containerColor = Color.Yellow.copy(alpha = 0.1f)),
+                    border = BorderStroke(1.dp, Color.Yellow.copy(alpha = 0.1f)),
+                    label = { Text(it.uppercase(), color = Color.Yellow, fontSize = 12.sp) }
                 )
             }
         }
@@ -327,13 +333,13 @@ fun AllergensSection(list: String) {
 @Composable
 fun ExpandableSection(
     icon: ImageVector,
+    iconColor: Color = Primary,
     title: String,
     content: @Composable () -> Unit
 ) {
     var expanded by remember { mutableStateOf(true) }
 
     Column(Modifier.padding(horizontal = 16.dp)) {
-
         Row(
             Modifier
                 .fillMaxWidth()
@@ -341,7 +347,7 @@ fun ExpandableSection(
                 .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, null, tint = Primary)
+            Icon(icon, null, tint = iconColor)
             Spacer(Modifier.width(12.dp))
             Text(title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Icon(

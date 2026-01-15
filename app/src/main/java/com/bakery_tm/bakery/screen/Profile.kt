@@ -353,14 +353,14 @@ fun GuestIllustration() {
 fun GuestMessage() {
     Column(horizontalAlignment = CenterHorizontally) {
         Text(
-            "You are browsing as a guest",
+            "Вы просматриваете страницу в качестве гостя",
             fontSize = 22.sp,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Log in or sign up to save your orders, track deliveries, and unlock exclusive rewards.",
+            "Войдите или зарегистрируйтесь, чтобы делать заказы, получать их и копить баллы.",
             fontSize = 14.sp,
             color = Primary,
             textAlign = TextAlign.Center
@@ -376,15 +376,14 @@ fun GuestButtons(onLogInClicked: () -> Unit, onRegisterClicked: () -> Unit) {
             modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Primary)
         ) {
-            Text("Log In", fontWeight = FontWeight.Bold, color = BackgroundDark)
+            Text("Войти", fontWeight = FontWeight.Bold, color = BackgroundDark)
         }
-
         OutlinedButton(
             onClick = onRegisterClicked,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             border = BorderStroke(2.dp, Primary.copy(alpha = 0.2f))
         ) {
-            Text("Sign Up", color = Primary, fontWeight = FontWeight.Bold)
+            Text("Зарегистрироваться", color = Primary, fontWeight = FontWeight.Bold)
         }
     }
 }
