@@ -93,6 +93,15 @@ class ShoppingCartViewModel(
             _state.emit(CartState())
         }
     }
+
+    fun addOrDeleteCartItem(productId: Long) {
+        val model = _cartItems.value.find { it.product.productId == productId }
+        if (model != null) {
+            deleteProduct(model.item.cartItemId)
+        } else {
+            addProduct(productId)
+        }
+    }
 }
 
 data class CartState(

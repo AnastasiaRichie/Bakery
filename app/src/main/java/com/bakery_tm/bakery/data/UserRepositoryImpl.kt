@@ -4,7 +4,7 @@ import com.bakery_tm.bakery.data.database.UserDao
 import com.bakery_tm.bakery.data.database.entity.UserEntity
 import com.bakery_tm.bakery.domain.AuthState
 import com.bakery_tm.bakery.domain.UserRepository
-import com.bakery_tm.bakery.screen.AccountFieldType
+import com.bakery_tm.bakery.models.UserStateModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,13 +47,13 @@ class UserRepositoryImpl(private val userDao: UserDao): UserRepository {
         userDao.insert(data)
     }
 
-    override suspend fun updateField(fieldType: AccountFieldType, value: String, userId: Int) {
+    override suspend fun updateProfileData(model: UserStateModel, userId: Int) {
         withContext(Dispatchers.IO) {
-            when (fieldType) {
-                AccountFieldType.NAME -> userDao.updateUserName(value, userId)
-                AccountFieldType.SURNAME -> userDao.updateUserSurname(value, userId)
-                AccountFieldType.EMAIL -> userDao.updateUserEmail(value, userId)
-                AccountFieldType.PASSWORD -> userDao.updateUserPassword(value.hashCode().toString(), userId)
+            userDao.updateUserName(model.name, userId)
+            userDao.updateUserSurname(model.surname.orEmpty(), userId)
+            userDao.updateUserEmail(model.email, userId)
+            if (model.password.isNotEmpty()) {
+                userDao.updateUserPassword(model.password.hashCode().toString(), userId)
             }
         }
     }

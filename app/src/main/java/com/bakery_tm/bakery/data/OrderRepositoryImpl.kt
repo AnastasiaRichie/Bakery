@@ -9,6 +9,7 @@ import com.bakery_tm.bakery.domain.OrderRepository
 import com.bakery_tm.bakery.models.Address
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 
 class OrderRepositoryImpl(
     private val orderDao: OrderDao,
@@ -37,11 +38,32 @@ class OrderRepositoryImpl(
         cartDao.clearCart(userId)
     }
 
+    override suspend fun reorder(orderId: Long) {
+        val order = getOrderDetails(orderId)
+        val orderId = orderDao.insertOrder(
+            OrderEntity(userOwnerId = order.order.userOwnerId, orderAddress = order.order.orderAddress, date = System.currentTimeMillis())
+        )
+        order.items.forEach { item ->
+            orderDao.insertOrderItem(
+                OrderItemEntity(
+                    orderId = orderId,
+                    productId = item.orderItem.productId,
+                    quantity = item.orderItem.quantity
+                )
+            )
+        }
+    }
+
     override fun getAllOrders(userId: Int): Flow<List<OrderWithItems>> {
         return orderDao.getOrdersForUser(userId)
     }
 
     override suspend fun getOrderDetails(orderId: Long): OrderWithItems {
         return orderDao.getOrderDetails(orderId)
+    }
+
+    override suspend fun calculateOrderTotal(orderId: Long): Double {
+        val items = getOrderDetails(orderId)
+        return items.items.sumOf { it.orderItem.quantity * it.product.price.replace(" BYN", "").toDouble() }
     }
 }

@@ -154,18 +154,14 @@ fun LoginScreenUi(
     onShowPasswordChanged: (Boolean) -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(background),
+        modifier = modifier.fillMaxSize().background(background),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             tonalElevation = 6.dp,
             shadowElevation = 12.dp,
             shape = RoundedCornerShape(24.dp),
-            modifier = Modifier
-                .width(390.dp)
-                .height(844.dp)
+            modifier = Modifier.width(390.dp).height(844.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -181,8 +177,7 @@ fun LoginScreenUi(
                         .align(Alignment.CenterHorizontally),
                     contentAlignment = Alignment.Center
                 ) {
-                    // TODO (tea cup icon)
-                    Icon(Icons.Default.Home, null, tint = BackgroundDark, modifier = Modifier.size(40.dp))
+                    Icon(painterResource(R.drawable.cafe), null, tint = BackgroundDark, modifier = Modifier.size(40.dp))
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(
@@ -319,13 +314,9 @@ fun PrimaryButton(text: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = Primary),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .padding(top = 4.dp, bottom = 16.dp)
-            .height(56.dp)
+        modifier = Modifier.padding(horizontal = 8.dp).height(40.dp)
     ) {
-        Text(text, color = BackgroundDark, fontSize = 18.sp)
+        Text(text, color = BackgroundDark, fontSize = 14.sp)
     }
 }
 
@@ -335,3 +326,4 @@ val BackgroundDark = Color(0xFF102216)
 val InputDark = Color(0xFF193322)
 val BorderDark = Color(0xFF326744)
 val MutedTextDark = Color(0xFF92C9A4)
+val Glass = Color.White.copy(alpha = 0.03f)

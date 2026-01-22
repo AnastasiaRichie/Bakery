@@ -5,7 +5,7 @@ import com.bakery_tm.bakery.models.FoodModel
 
 fun ProductEntity.toDomain(): FoodModel{
     return FoodModel(
-        foodId = productId,
+        productId = productId,
         name = name,
         weight = weight,
         description = description,

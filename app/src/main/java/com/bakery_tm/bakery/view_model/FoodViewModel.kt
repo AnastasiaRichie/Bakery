@@ -24,9 +24,9 @@ class FoodViewModel(
         }
     }
 
-    fun initSelected(foodId: Long) {
+    fun initSelected(productId: Long) {
         viewModelScope.launch {
-            val food = _state.value.find { it.foodId == foodId } ?: return@launch
+            val food = _state.value.find { it.productId == productId } ?: return@launch
             _selected.emit(food)
         }
     }

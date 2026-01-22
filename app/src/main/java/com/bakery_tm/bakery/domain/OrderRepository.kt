@@ -6,8 +6,10 @@ import kotlinx.coroutines.flow.Flow
 
 interface OrderRepository {
     suspend fun createOrder(userId: Int, address: Address)
+    suspend fun reorder(orderId: Long)
 
     fun getAllOrders(userId: Int): Flow<List<OrderWithItems>>
 
     suspend fun getOrderDetails(orderId: Long): OrderWithItems
+    suspend fun calculateOrderTotal(orderId: Long): Double
 }
