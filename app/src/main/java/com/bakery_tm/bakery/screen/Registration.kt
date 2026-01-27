@@ -61,7 +61,6 @@ import com.bakery_tm.bakery.view_model.RegistrationViewModel
 fun RegistrationScreen(
     modifier: Modifier,
     viewModel: RegistrationViewModel,
-    onBack: () -> Unit,
     onLoginClick: () -> Unit,
     onSuccessClick: () -> Unit,
 ) {
@@ -112,7 +111,6 @@ fun RegistrationScreen(
         onLoginClick = onLoginClick,
         showPassword = showPassword,
         onShowChanged = { showPassword = it},
-        onBack = onBack,
     )
 }
 
@@ -134,35 +132,14 @@ fun RegistrationScreenUi(
     onLoginClick: () -> Unit,
     showPassword: Boolean,
     onShowChanged: (Boolean) -> Unit,
-    onBack: () -> Unit,
 ) {
     val nameFocusRequester = remember { FocusRequester() }
     val surnameFocusRequester = remember { FocusRequester() }
     val emailFocusRequester = remember { FocusRequester() }
     val passwordFocusRequester = remember { FocusRequester() }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(background)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ) {
-//            Row(
-//                modifier = Modifier.padding(16.dp),
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                IconButton(onClick = onBack) {
-//                    Icon(Icons.Default.ArrowBack, null)
-//                }
-//                Spacer(Modifier.weight(1f))
-//                Text("Регистрация", style = MaterialTheme.typography.titleLarge)
-//                Spacer(Modifier.weight(1f))
-//                Spacer(Modifier.width(32.dp))
-//            }
+    Box(modifier = modifier.fillMaxSize().background(background)) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             Text(
                 "Присоединиться к Комьюнити",
                 style = MaterialTheme.typography.headlineMedium,
@@ -175,18 +152,30 @@ fun RegistrationScreenUi(
             )
 
             InputField("Имя", userStateModel.name) { onNameChanged(it) }
-            InputField("Фамилия (опционально)", userStateModel.surname.orEmpty()) { onSurnameChanged(it) }
+            InputField(
+                "Фамилия (опционально)",
+                userStateModel.surname.orEmpty()
+            ) { onSurnameChanged(it) }
 
-            InputField(label = "Почта", value = userStateModel.email, onValueChange = { onEmailChanged(it) }, isError = error.isNotEmpty())
+            InputField(
+                label = "Почта",
+                value = userStateModel.email,
+                onValueChange = { onEmailChanged(it) },
+                isError = error.isNotEmpty()
+            )
 
             if (error.isNotEmpty()) {
                 Row(
                     modifier = Modifier.padding(start = 20.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Warning, null, tint = Color.Red, modifier = Modifier.size(14.dp))
+                    Icon(
+                        Icons.Default.Warning,
+                        null,
+                        tint = Color.Red,
+                        modifier = Modifier.size(14.dp)
+                    )
                     Spacer(Modifier.width(4.dp))
-                    //Text(text = "Эта почта уже зарегистрирована. ", color = Color.Red, fontSize = 12.sp)
                     Text(text = "$error. ", color = Color.Red, fontSize = 12.sp)
                     Text(
                         "Войти?",
@@ -207,10 +196,7 @@ fun RegistrationScreenUi(
 
             Button(
                 onClick = { onRegisterClick(userStateModel) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(56.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary)
             ) {
                 Text("Зарегистрироваться", color = BackgroundDark, fontSize = 18.sp)
@@ -219,10 +205,7 @@ fun RegistrationScreenUi(
             val annotatedString = buildAnnotatedString {
                 append("By clicking continue, you agree to our ")
 
-                pushStringAnnotation(
-                    tag = "terms",
-                    annotation = "terms"
-                )
+                pushStringAnnotation(tag = "terms", annotation = "terms")
                 withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                     append("Terms of Service")
                 }
@@ -270,7 +253,12 @@ fun RegistrationScreenUi(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     HorizontalDivider(Modifier.weight(1f))
-                    Text("ИЛИ", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 8.dp))
+                    Text(
+                        "ИЛИ",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                     HorizontalDivider(Modifier.weight(1f))
                 }
 
@@ -294,79 +282,7 @@ fun RegistrationScreenUi(
             }
         }
     }
-
-//    Column(
-//        modifier = modifier
-//            .fillMaxSize()
-//            .padding(horizontal = 16.dp)
-//    ) {
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(16.dp),
-//            horizontalArrangement = Arrangement.Center,
-//        ) {
-//            Text(
-//                text = "Registration",
-//                style = MaterialTheme.typography.titleLarge
-//            )
-//        }
-//        Spacer(modifier = Modifier.weight(1f))
-//        Column(
-//            verticalArrangement = Arrangement.Center,
-//            modifier = Modifier.imePadding()
-//        ) {
-//            InputField(
-//                userStateModel.name,
-//                stringResource(R.string.name),
-//                onValueChanged = onNameChanged,
-//                currentRequest = nameFocusRequester,
-//                nextRequest = surnameFocusRequester,
-//            )
-//            InputField(
-//                userStateModel.surname.orEmpty(),
-//                stringResource(R.string.surname_optional),
-//                onValueChanged = onSurnameChanged,
-//                currentRequest = surnameFocusRequester,
-//                nextRequest = emailFocusRequester,
-//            )
-//            InputField(
-//                userStateModel.email,
-//                stringResource(R.string.email),
-//                KeyboardType.Email,
-//                onValueChanged = onEmailChanged,
-//                currentRequest = emailFocusRequester,
-//                nextRequest = passwordFocusRequester,
-//            )
-//            InputField(
-//                userStateModel.password,
-//                stringResource(R.string.password),
-//                KeyboardType.Password,
-//                PasswordVisualTransformation(),
-//                onValueChanged = onPasswordChanged,
-//                currentRequest = passwordFocusRequester,
-//            )
-//            if (error.isNotEmpty()) {
-//                Text(error, fontSize = 12.sp, color = Color.Red)
-//            }
-//            Spacer(modifier = Modifier.height(18.dp))
-//            Button(
-//                onClick = { onRegisterClick(userStateModel) },
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(56.dp)
-//                    .padding(top = 8.dp),
-//                enabled = userStateModel.name.isNotBlank()
-//                        && Patterns.EMAIL_ADDRESS.matcher(userStateModel.email).matches()
-//                        && userStateModel.password.length >= 4
-//            ) {
-//                Text("Register")
-//            }
-//        }
-        //Spacer(modifier = Modifier.weight(1f))
-
-    }
-//}
+}
 
 @Composable
 fun InputField(

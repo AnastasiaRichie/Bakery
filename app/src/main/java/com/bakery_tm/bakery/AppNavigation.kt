@@ -90,7 +90,6 @@ fun AppNavigation(
                     RegistrationScreen(
                         modifier = Modifier.padding(innerPadding),
                         viewModel = registrationViewModel,
-                        onBack = { navController.popBackStack() },
                         onLoginClick = { navController.navigate(LOGIN) },
                     ) {
                         navController.navigate(FOOD) {
