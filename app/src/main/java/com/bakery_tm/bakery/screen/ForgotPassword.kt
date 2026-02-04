@@ -6,33 +6,47 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.util.Patterns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,6 +63,8 @@ fun ForgotPasswordScreen(
     modifier: Modifier,
     onBackClicked: () -> Unit
 ) {
+    val dark = isSystemInDarkTheme()
+    val background = if (dark) BackgroundDark else BackgroundLight
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {}
@@ -69,9 +85,12 @@ fun ForgotPasswordScreen(
     ForgotPasswordScreenUi(
         modifier = modifier,
         email = state,
+        dark = dark,
         userNotExistsEvent = userNotExistsEvent,
-        onForgotClicked = { viewModel.isEmailExists() },
+        background = background,
         onEmailChanged = { email -> viewModel.onEmailChanged(email) },
+        onSendClick = { viewModel.isEmailExists() },
+        onBack = onBackClicked,
     )
 }
 
@@ -79,66 +98,143 @@ fun ForgotPasswordScreen(
 fun ForgotPasswordScreenUi(
     modifier: Modifier,
     email: String,
+    dark: Boolean,
     userNotExistsEvent: Boolean,
+    background: Color,
     onEmailChanged: (String) -> Unit,
-    onForgotClicked: () -> Unit,
+    onSendClick: () -> Unit,
+    onBack: () -> Unit,
 ) {
     val emailFocusRequester = remember { FocusRequester() }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .systemBarsPadding()
-            .padding(horizontal = 16.dp),
-    ) {
-        Row(
+
+    Box(modifier
+        .fillMaxSize()
+        .background(background)) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Default.ArrowBack, null)
+                }
+                Spacer(Modifier.weight(1f))
+                Text("Восстановить пароль", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(32.dp))
+            }
+
             Text(
                 text = "Забыли пароль?",
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp)
             )
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Column(
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.imePadding()
-        ) {
             Text(
-                fontSize = 12.sp,
-                text = "Если забыли пароль, введите почту, на которую был зарегистрирован аккаунт, и вам придет временный пароль. Войдите по нему и после в настройках аккаунта поменяйте его.",
-                modifier = Modifier.fillMaxWidth().padding(4.dp)
+                "Если забыли пароль, введите почту, на которую был зарегистрирован аккаунт, и вам придет временный пароль. Войдите по нему и после в настройках аккаунта поменяйте его.",
+                color = if (dark) Color(0xFFD1D5DB) else Color(0xFF4B5563),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
-            InputField(
-                name = email,
-                label = stringResource(R.string.email),
-                type = KeyboardType.Email,
-                padding = 4,
-                onValueChanged = onEmailChanged,
-                currentRequest = emailFocusRequester,
+
+            EmailField(
+                value = email,
+                onEmailChanged = { email -> onEmailChanged(email) },
+                emailFocusRequester = emailFocusRequester,
+                onClear = { onEmailChanged("") }
             )
+
             if (userNotExistsEvent) {
-                Text("Пользователя с таким email нет!", fontSize = 12.sp, color = Color.Red)
+                Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    Icon(
+                        Icons.Default.Warning,
+                        null,
+                        tint = Color.Red,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .align(Alignment.CenterVertically)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Мы не можем найти аккаунт, связанный с введенной почтой. Проверьте корректность введенных данных.",
+                        color = Color.Red,
+                        fontSize = 14.sp
+                    )
+                }
             }
-            Button(
-                onClick = onForgotClicked,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White,
-                    disabledContainerColor = Color.DarkGray,
-                    disabledContentColor = Color.Gray,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp)
-                    .padding(top = 8.dp, start = 4.dp, end = 4.dp),
-                enabled = Patterns.EMAIL_ADDRESS.matcher(email).matches()
-            ) {
-                Text("Forgot")
+
+            Spacer(Modifier.weight(1f))
+
+            Column(Modifier.padding(16.dp)) {
+                Button(
+                    onClick = onSendClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                ) {
+                    Text("Отправить Временный Пароль", color = BackgroundDark)
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.Default.Send, null, tint = BackgroundDark)
+                }
+
+                TextButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 12.dp)
+                ) {
+                    Text("Назад к Логину")
+                }
             }
         }
-        Spacer(modifier = Modifier.weight(1f))
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(128.dp)
+                .background(
+                    Brush.linearGradient(listOf(Primary.copy(alpha = 0.3f), Color.Transparent)),
+                    shape = RoundedCornerShape(topStart = 128.dp)
+                )
+        )
+    }
+}
+
+@Composable
+fun EmailField(
+    value: String,
+    emailFocusRequester: FocusRequester,
+    onEmailChanged: (String) -> Unit,
+    onClear: () -> Unit
+) {
+    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text("Почта", fontWeight = FontWeight.Medium)
+        InputField(
+            name = value,
+            label = stringResource(R.string.email),
+            type = KeyboardType.Email,
+            padding = 4,
+            onValueChanged = onEmailChanged,
+            currentRequest = emailFocusRequester,
+            placeholder = { Text("Например, example@mail.com") },
+        )
+//        OutlinedTextField(
+//            value = value,
+//            onValueChange = onValueChange,
+//            modifier = Modifier.fillMaxWidth(),
+//            shape = RoundedCornerShape(12.dp),
+//            placeholder = { Text("Например, example@mail.com") },
+//            trailingIcon = {
+//                if (value.isNotEmpty()) {
+//                    IconButton(onClick = onClear) {
+//                        Icon(Icons.Default.Clear, null)
+//                    }
+//                }
+//            }
+//        )
     }
 }
 

@@ -2,8 +2,8 @@ package com.bakery_tm.bakery.view_model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bakery_tm.bakery.data.database.entity.toModel
 import com.bakery_tm.bakery.domain.UserRepository
-import com.bakery_tm.bakery.screen.AccountFieldType
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -34,7 +34,10 @@ class ForgotPasswordViewModel(
             if (user != null) {
                 _userNotExistsEvent.emit(false)
                 val newPassword = generatePassword()
-                userRepository.updateField(AccountFieldType.PASSWORD, newPassword, user.userId)
+                userRepository.updateProfileData(
+                    model = user.toModel().copy(password = newPassword),
+                    userId = user.userId
+                )
                 _sendNotification.emit(newPassword)
             } else {
                 _userNotExistsEvent.emit(true)

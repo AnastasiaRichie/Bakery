@@ -13,6 +13,7 @@ data class ProductEntity(
     val weight: String,
     val description: String,
     val fullDescription: String,
+    val allergens: List<String>,
     val foodType: FoodType,
     val foodImageName: String,
 )

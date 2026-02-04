@@ -7,7 +7,9 @@ import com.bakery_tm.bakery.data.database.relations.OrderWithItems
 import com.bakery_tm.bakery.domain.OrderRepository
 import com.bakery_tm.bakery.domain.UserRepository
 import com.bakery_tm.bakery.models.Address
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -23,8 +25,11 @@ class OrderViewModel(
     private val _order = MutableStateFlow<OrderWithItems?>(null)
     val order: StateFlow<OrderWithItems?> = _order
 
-    private val _orders = MutableStateFlow<List<OrderWithItems>>(emptyList())
-    val orders: StateFlow<List<OrderWithItems>> = _orders
+    private val _orders = MutableStateFlow<List<Pair<OrderWithItems, Double>>>(emptyList())
+    val orders: StateFlow<List<Pair<OrderWithItems, Double>>> = _orders
+
+    private val _onBack = MutableSharedFlow<Unit>()
+    val onBack: SharedFlow<Unit> = _onBack
 
     init {
         getOrders()
@@ -59,6 +64,16 @@ class OrderViewModel(
         }
     }
 
+    fun reorder(orderId: Long) {
+        viewModelScope.launch {
+            try {
+                orderRepository.reorder(orderId)
+            } finally {
+                _onBack.emit(Unit)
+            }
+        }
+    }
+
     private fun updateSelectedOrderId(orderId: Long) {
         if (localOrderId != orderId) {
             _order.value = null
@@ -68,7 +83,7 @@ class OrderViewModel(
 
     private suspend fun getAllOrders(userId: Int) {
         orderRepository.getAllOrders(userId).collect {
-            _orders.value = it
+            _orders.value = it.map { it to orderRepository.calculateOrderTotal(it.order.orderId) }
         }
     }
 }
