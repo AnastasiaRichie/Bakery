@@ -1,5 +1,6 @@
 package com.bakery_tm.bakery
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.WindowInsets
@@ -52,6 +53,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AppNavigation(
+    isConnected: Boolean,
     userViewModel: UserViewModel = koinViewModel(),
     foodViewModel: FoodViewModel = koinViewModel(),
     shoppingCartViewModel: ShoppingCartViewModel = koinViewModel(),
@@ -59,7 +61,8 @@ fun AppNavigation(
     registrationViewModel: RegistrationViewModel = koinViewModel(),
 ) {
     val navController = rememberNavController()
-    val authState by userViewModel.authState.collectAsState(null)
+    val authState by userViewModel.authState.collectAsState(AuthState.Loading)
+    Log.e("qwe", "AppNavigation authState: " + authState)
     val context = LocalContext.current
     if (authState == AuthState.Loading) {
         SplashScreen()

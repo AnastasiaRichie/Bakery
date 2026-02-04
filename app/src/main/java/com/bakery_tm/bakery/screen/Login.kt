@@ -86,7 +86,7 @@ fun LoginScreen(
             when (event) {
                 NavigationEvent.NavigateToFood -> {
                     shoppingCartViewModel.getShoppingCart()
-                    orderViewModel.getOrders()
+//                    orderViewModel.getOrders()
                     onFoodNavigation()
                 }
                 NavigationEvent.NavigateToRegister -> onSignUpClick()
@@ -314,7 +314,7 @@ fun PrimaryButton(text: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = Primary),
-        modifier = Modifier.padding(horizontal = 8.dp).height(40.dp)
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp).height(56.dp)
     ) {
         Text(text, color = BackgroundDark, fontSize = 14.sp)
     }

@@ -19,14 +19,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -175,7 +173,7 @@ fun RegistrationScreenUi(
             )
 
             InputField("Имя", userStateModel.name) { onNameChanged(it) }
-            InputField("Фамилия (опционально)", userStateModel.surname.orEmpty()) { onSurnameChanged(it) }
+            InputField("Фамилия (опционально)", userStateModel.lastName.orEmpty()) { onSurnameChanged(it) }
 
             InputField(label = "Почта", value = userStateModel.email, onValueChange = { onEmailChanged(it) }, isError = error.isNotEmpty())
 

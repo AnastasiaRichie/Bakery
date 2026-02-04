@@ -13,12 +13,12 @@ interface ProductDao {
 
     // Добавить все мок-позиции пекарни
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAllProducts(users: List<ProductEntity>)
+    suspend fun insertAllProducts(products: List<ProductEntity>)
 
     // Получить доступные позиции пекарни
     @Transaction
     @Query("SELECT * FROM products")
-    fun getAllProducts(): Flow<List<ProductEntity>>
+    fun getAllProducts(): List<ProductEntity>
 
     // Получить позицию пекарни по id
     @Query("SELECT * FROM products WHERE productId = :productId")

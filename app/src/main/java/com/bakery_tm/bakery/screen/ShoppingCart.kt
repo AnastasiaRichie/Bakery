@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -95,11 +94,11 @@ fun ShoppingCartScreen(
 }
 
 val mockedAddresses = listOf(
-    Address("1", "Витебск", "ул. Ленина, 12"),
-    Address("2", "Минск", "пр. Победы, 45"),
-    Address("3", "Минск", "ул. Горького, 3"),
-    Address("4", "Гродно", "наб. Реки, 7"),
-    Address("5", "Полоцк", "пер. Цветочный, 9")
+    Address(1, "Витебск", "ул. Ленина, 12"),
+    Address(2, "Минск", "пр. Победы, 45"),
+    Address(3, "Минск", "ул. Горького, 3"),
+    Address(4, "Гродно", "наб. Реки, 7"),
+    Address(5, "Полоцк", "пер. Цветочный, 9")
 )
 
 @Composable
@@ -400,8 +399,8 @@ fun CartItemRow(
     onDeleteClicked: (Long) -> Unit,
 ) {
     val context = LocalContext.current
-    val foodIconRes = remember(item.product.foodImageName) {
-        context.resources.getIdentifier(item.product.foodImageName, "drawable", context.packageName)
+    val foodIconRes = remember(item.product.productImageName) {
+        context.resources.getIdentifier(item.product.productImageName, "drawable", context.packageName)
     }
     Row(
         Modifier.fillMaxWidth().padding(vertical = 12.dp).padding(start = 10.dp, end = 16.dp),
@@ -505,9 +504,7 @@ fun CheckoutPanel(
         Button(
             onClick = onCreateOrder,
             enabled = enabled,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundDark)
         ) {
             Text("Заказать", fontSize = 18.sp)

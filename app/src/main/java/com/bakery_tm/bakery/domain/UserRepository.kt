@@ -3,22 +3,18 @@ package com.bakery_tm.bakery.domain
 import com.bakery_tm.bakery.data.database.entity.UserEntity
 import com.bakery_tm.bakery.models.UserStateModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 
 interface UserRepository {
-    val authState: StateFlow<AuthState>
 
-    suspend fun setAuthState(state: AuthState)
+    fun getUser(): Flow<UserEntity?>
 
-    suspend fun isUserLoggedIn(): Boolean
+    suspend fun insertUser(user: UserEntity)
 
-    fun getLoggedInUser(): Flow<UserEntity?>
+    suspend fun deleteUser()
 
-    suspend fun getUserByEmail(email: String): UserEntity?
+    suspend fun register(model: UserStateModel)
 
-    suspend fun updateIsLoggedIn(isLoggedIn: Boolean, email: String)
+    suspend fun login(email: String, password: String)
 
-    suspend fun registerUser(data: UserEntity)
-
-    suspend fun updateProfileData(model: UserStateModel, userId: Int)
+    suspend fun updateUser(name: String?, lastName: String?, email: String?, password: String?)
 }

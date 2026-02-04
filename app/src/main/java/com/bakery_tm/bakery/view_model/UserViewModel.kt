@@ -2,6 +2,7 @@ package com.bakery_tm.bakery.view_model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bakery_tm.bakery.common.AuthManager
 import com.bakery_tm.bakery.data.database.entity.toModel
 import com.bakery_tm.bakery.domain.AuthState
 import com.bakery_tm.bakery.domain.AvatarPreferences
@@ -20,10 +21,11 @@ import kotlinx.coroutines.launch
 
 class UserViewModel(
     private val userRepository: UserRepository,
-    private val avatarPrefs: AvatarPreferences
+    private val avatarPrefs: AvatarPreferences,
+    private val authManager: AuthManager,
 ) : ViewModel() {
 
-    val authState = userRepository.authState
+    val authState = authManager.authState
 
     private val _state = MutableStateFlow(UserState())
     val state: StateFlow<UserState> = _state
@@ -42,11 +44,11 @@ class UserViewModel(
         avatarPrefs.saveAvatar(avatar.name)
     }
 
-    fun onLogOutClicked(email: String) {
+    fun onLogOutClicked() {
         viewModelScope.launch {
             try {
                 _events.emit(NavigationEvent.NavigateToRegister)
-                userRepository.updateIsLoggedIn(false, email)
+                userRepository.deleteUser()
             } finally {
                 getUserData()
             }
@@ -57,31 +59,29 @@ class UserViewModel(
         viewModelScope.launch {
             try {
                 _state.update { state -> state.copy(isLoading = true) }
-                userRepository.getLoggedInUser().collect { user ->
+                userRepository.getUser().collect { user ->
                     _state.update { state -> state.copy(userStateModel = user?.toModel(), isLoading = false) }
-                    userRepository.setAuthState(
-                        if (user != null) {
-                            AuthState.Authenticated
-                        } else {
-                            AuthState.Unauthenticated
-                        }
+                    val isTokenValid = authManager.isTokenValid()
+                    authManager.setAuthState(
+                        if (isTokenValid) AuthState.Authenticated else AuthState.Unauthenticated
                     )
                 }
             } catch (e: Exception) {
-                userRepository.setAuthState(AuthState.Unauthenticated)
+                _state.update { state -> state.copy(errorMessage = e.message.orEmpty(), isLoading = false) }
+                authManager.setAuthState(AuthState.Unauthenticated)
             } finally {
                 _state.update { state -> state.copy(isLoading = false) }
             }
         }
     }
 
-    fun onEditDataSaved(model: UserStateModel, userId: Int) {
+    fun onEditDataSaved(name: String?, lastName: String?, email: String?, password: String?) {
         viewModelScope.launch {
             try {
-                userRepository.updateProfileData(model, userId)
+                userRepository.updateUser(name = name, lastName = lastName, email = email, password = password)
                 _events.emit(NavigationEvent.NavigateBack)
             } finally {
-                val model = userRepository.getLoggedInUser().firstOrNull()?.toModel()
+                val model = userRepository.getUser().firstOrNull()?.toModel()
                 _state.update { state -> state.copy(userStateModel = model) }
             }
         }
