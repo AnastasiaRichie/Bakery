@@ -1,5 +1,6 @@
 package com.bakery_tm.bakery.screen
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
@@ -64,7 +65,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import com.bakery_tm.bakery.data.database.entity.CartItemEntity
-import com.bakery_tm.bakery.models.FoodModel
+import com.bakery_tm.bakery.models.ProductModel
 import com.bakery_tm.bakery.view_model.FoodViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import kotlin.random.Random
@@ -94,6 +95,8 @@ fun FoodDetailsScreen(
         shoppingCartViewModel.updateSelectedState()
         onBackClicked()
     }
+    Log.e("qwe", "FoodDetailsScreen isReady: "+ isReady)
+    Log.e("qwe", "FoodDetailsScreen selected: "+ selected)
     if (isReady) {
         selected?.let {
             FoodDetailsScreenUi(
@@ -104,6 +107,7 @@ fun FoodDetailsScreen(
                 background = background,
                 cartItem = state.cartItem,
                 onQuantityChanged = { add ->
+                    Log.e("qwe", "FoodDetailsScreen add: " + add)
                     shoppingCartViewModel.updateQuantity(add, it.productId)
                 },
                 onAddClicked = {
@@ -125,7 +129,7 @@ fun FoodDetailsScreenUi(
     modifier: Modifier,
     isActive: Boolean,
     isLoggedIn: Boolean,
-    model: FoodModel,
+    model: ProductModel,
     background: Color,
     cartItem: CartItemEntity?,
     onBackClicked: () -> Unit,
@@ -134,10 +138,12 @@ fun FoodDetailsScreenUi(
 ) {
     var count by remember { mutableIntStateOf(cartItem?.quantity ?: 0) }
     val context = LocalContext.current
-    val foodIconRes = remember(model.foodImageName) {
-        context.resources.getIdentifier(model.foodImageName, "drawable", context.packageName)
+    val foodIconRes = remember(model.productImageName) {
+        context.resources.getIdentifier(model.productImageName, "drawable", context.packageName)
     }
-    Box(modifier.fillMaxSize().background(background)) {
+    Box(modifier
+        .fillMaxSize()
+        .background(background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             LazyColumn(modifier = Modifier.weight(1f)) {
                 item { HeroImage(foodIconRes, onBackClicked) }

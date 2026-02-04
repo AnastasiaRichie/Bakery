@@ -1,5 +1,6 @@
 package com.bakery_tm.bakery.screen
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,10 +12,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,7 +45,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bakery_tm.bakery.common.InputField
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.view_model.UserViewModel
@@ -70,70 +67,15 @@ fun EditScreen(
     }
     state.userStateModel?.let { data ->
         EditProfileScreen(
-            modifier,
-            data,
-            avatar,
-            { selectedAvatar -> viewModel.selectAvatar(selectedAvatar) },
-            onBackClicked,
-            { viewModel.onEditDataSaved(it, it.userId) },
+            modifier = modifier,
+            data = data,
+            avatar = avatar,
+            onAvatarSelected = { selectedAvatar -> viewModel.selectAvatar(selectedAvatar) },
+            onBack = onBackClicked,
+            onSave = { name, lastName, email, password ->
+                viewModel.onEditDataSaved(name, lastName, email, password)
+            },
         )
-    }
-}
-
-@Composable
-fun EditScreenUi(
-    modifier: Modifier,
-    fieldEnteredValue: String,
-    onSaveClicked: () -> Unit,
-    onValueChanged: (String) -> Unit,
-) {
-    val focusRequester = remember { FocusRequester() }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .systemBarsPadding()
-            .padding(horizontal = 16.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-        ) {
-            Text(
-                text = "Редактировать",
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Column(
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.imePadding()
-        ) {
-            InputField(
-                name = fieldEnteredValue,
-                label = "",
-                padding = 4,
-                onValueChanged = onValueChanged,
-                currentRequest = focusRequester,
-            )
-            Button(
-                onClick = onSaveClicked,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White,
-                    disabledContainerColor = Color.DarkGray,
-                    disabledContentColor = Color.Gray,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp)
-                    .padding(top = 8.dp, start = 4.dp, end = 4.dp),
-                enabled = fieldEnteredValue.isNotBlank()
-            ) {
-                Text("Сохранить")
-            }
-        }
-        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
@@ -144,10 +86,10 @@ fun EditProfileScreen(
     avatar: ProfileAvatar,
     onAvatarSelected: (ProfileAvatar) -> Unit,
     onBack: () -> Unit,
-    onSave: (UserStateModel) -> Unit,
+    onSave: (String?, String?, String?, String?) -> Unit,
 ) {
     var firstName by remember { mutableStateOf(data.name) }
-    var lastName by remember { mutableStateOf(data.surname.orEmpty()) }
+    var lastName by remember { mutableStateOf(data.lastName) }
     var email by remember { mutableStateOf(data.email) }
     var password by remember { mutableStateOf("") }
     var model by remember { mutableStateOf(data) }
@@ -190,7 +132,7 @@ fun EditProfileScreen(
             Text("Персональные данные")
             Spacer(Modifier.height(8.dp))
             FloatingField(firstName, { firstName = it }, "Имя")
-            FloatingField(lastName, { lastName = it }, "Фамилия (опционально)")
+            FloatingField(lastName.orEmpty(), { lastName = it }, "Фамилия (опционально)")
             Text("Конфиденциальные данные")
             Spacer(Modifier.height(8.dp))
             FloatingField(email, { email = it }, "Почта")
@@ -204,12 +146,10 @@ fun EditProfileScreen(
             Button(
                 onClick = {
                     onSave(
-                        model.copy(
-                            name = firstName,
-                            surname = lastName,
-                            email = email,
-                            password = password,
-                        )
+                        getUpdatedField(model.name, firstName),
+                        getUpdatedField(model.lastName, lastName),
+                        getUpdatedField(model.email, email),
+                        getUpdatedField("", password),
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -258,4 +198,8 @@ fun FloatingField(
         },
         shape = RoundedCornerShape(16.dp)
     )
+}
+
+fun getUpdatedField(oldValue: String?, newValue: String?): String? {
+    return if (oldValue == newValue) null else newValue
 }

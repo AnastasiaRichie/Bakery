@@ -1,5 +1,6 @@
 package com.bakery_tm.bakery.view_model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bakery_tm.bakery.data.database.entity.CartItemEntity
@@ -7,6 +8,7 @@ import com.bakery_tm.bakery.data.database.entity.UserEntity
 import com.bakery_tm.bakery.data.database.relations.CartItemWithProduct
 import com.bakery_tm.bakery.domain.ShoppingCartRepository
 import com.bakery_tm.bakery.domain.UserRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -17,7 +19,7 @@ class ShoppingCartViewModel(
     private val userRepository: UserRepository,
 ): ViewModel() {
 
-    private var user: UserEntity? = null
+    private var localUser: UserEntity? = null
 
     private val _cartItems = MutableStateFlow<List<CartItemWithProduct>>(emptyList())
     val cartItems: StateFlow<List<CartItemWithProduct>> = _cartItems
@@ -33,17 +35,17 @@ class ShoppingCartViewModel(
     }
 
     fun getShoppingCart() {
-        viewModelScope.launch {
-            user = userRepository.getLoggedInUser().firstOrNull()
-            launch {
-                user?.userId?.let {
-                    shoppingCartRepository.getCartFull(it).collect { _cartItems.value = it }
-                }
-            }
-            launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            userRepository.getUser().collect { user ->
+                localUser = user
                 user?.userId?.let { userId ->
-                    shoppingCartRepository.calculateCartTotal(userId).collect {
-                        _cartSum.value = it
+                    launch {
+                        shoppingCartRepository.getCartFull(userId).collect { _cartItems.value = it }
+                    }
+                    launch {
+                        shoppingCartRepository.calculateCartTotal(userId).collect {
+                            _cartSum.value = it
+                        }
                     }
                 }
             }
@@ -53,18 +55,18 @@ class ShoppingCartViewModel(
     fun onLogoutClicked() {
         _state.value = CartState()
         _cartItems.value = emptyList()
-        user = null
+        localUser = null
     }
 
     fun getCartInfoByProductId(productId: Long) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             shoppingCartRepository.getCart(productId).collect { _state.value = CartState(false, it) }
         }
     }
 
     fun updateQuantity(add: Boolean, productId: Long) {
-        viewModelScope.launch {
-            user?.userId?.let { userId ->
+        viewModelScope.launch(Dispatchers.IO) {
+            localUser?.userId?.let { userId ->
                 if (add) {
                     shoppingCartRepository.addProduct(userId, productId)
                 } else {
@@ -76,7 +78,8 @@ class ShoppingCartViewModel(
 
     fun addProduct(productId: Long) {
         viewModelScope.launch {
-            user?.userId?.let { userId ->
+            Log.e("qwe", "addProduct user?.userId: " + localUser?.userId)
+            localUser?.userId?.let { userId ->
                 shoppingCartRepository.addProductToCart(userId, productId)
             }
         }

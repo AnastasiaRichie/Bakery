@@ -30,18 +30,18 @@ class ForgotPasswordViewModel(
 
     fun isEmailExists() {
         viewModelScope.launch {
-            val user = userRepository.getUserByEmail(_state.value)
-            if (user != null) {
-                _userNotExistsEvent.emit(false)
-                val newPassword = generatePassword()
-                userRepository.updateProfileData(
-                    model = user.toModel().copy(password = newPassword),
-                    userId = user.userId
-                )
-                _sendNotification.emit(newPassword)
-            } else {
-                _userNotExistsEvent.emit(true)
-            }
+//            val user = userRepository.getUserByEmail(_state.value)
+//            if (user != null) {
+//                _userNotExistsEvent.emit(false)
+//                val newPassword = generatePassword()
+////                userRepository.updateProfileData(
+////                    model = user.toModel().copy(password = newPassword),
+////                    userId = user.userId
+////                )
+//                _sendNotification.emit(newPassword)
+//            } else {
+//                _userNotExistsEvent.emit(true)
+//            }
         }
     }
 

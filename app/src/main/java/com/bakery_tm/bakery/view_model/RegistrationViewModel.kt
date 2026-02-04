@@ -3,7 +3,7 @@ package com.bakery_tm.bakery.view_model
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bakery_tm.bakery.data.database.entity.toEntity
+import com.bakery_tm.bakery.common.AuthManager
 import com.bakery_tm.bakery.domain.UserRepository
 import com.bakery_tm.bakery.models.FieldType
 import com.bakery_tm.bakery.models.NavigationEvent
@@ -15,9 +15,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class RegistrationViewModel(private val userRepository: UserRepository) : ViewModel() {
+class RegistrationViewModel(
+    private val userRepository: UserRepository,
+    private val authManager: AuthManager,
+) : ViewModel() {
 
-    val authState = userRepository.authState
+    val authState = authManager.authState
 
     private val _state = MutableStateFlow(UserStateModel())
     val state: StateFlow<UserStateModel> = _state
@@ -28,26 +31,10 @@ class RegistrationViewModel(private val userRepository: UserRepository) : ViewMo
     fun onLoginClick(email: String, password: String) {
         viewModelScope.launch {
             try {
-                val user = userRepository.getUserByEmail(email)
-                when {
-                    user == null -> {
-                        _events.emit(NavigationEvent.ShowError("Пользователя с таким email не существует!"))
-                        return@launch
-                    }
-                    user.hashedPassword != password.hashCode().toString() -> {
-                        _events.emit(NavigationEvent.ShowError("Проверьте корректность введенных данных!"))
-                        return@launch
-                    }
-                    else -> {
-                        try {
-                            userRepository.updateIsLoggedIn(true, email)
-                        } finally {
-                            _events.emit(NavigationEvent.NavigateToFood)
-                        }
-                    }
-                }
+                userRepository.login(email, password)
             } catch (e: Exception) {
-                Log.e("RegistrationViewModel", "onLoginClick e: $e")
+                Log.e("qwe", "onLoginClick e: " + e)
+                _events.emit(NavigationEvent.ShowError(e.message.orEmpty()))
             }
         }
     }
@@ -55,18 +42,9 @@ class RegistrationViewModel(private val userRepository: UserRepository) : ViewMo
     fun onRegisterClick(model: UserStateModel) {
         viewModelScope.launch {
             try {
-                val user = userRepository.getUserByEmail(model.email)
-                if (user != null) {
-                    _events.emit(NavigationEvent.ShowError("Пользователь с таким email уже существует!"))
-                    return@launch
-                }
-                try {
-                    userRepository.registerUser(model.toEntity(true))
-                } finally {
-                    _events.emit(NavigationEvent.NavigateToFood)
-                }
+                userRepository.register(model)
             } catch (e: Exception) {
-                Log.e("RegistrationViewModel", "onRegisterClick e: $e")
+                _events.emit(NavigationEvent.ShowError(e.message.orEmpty()))
             }
         }
     }
@@ -97,7 +75,7 @@ class RegistrationViewModel(private val userRepository: UserRepository) : ViewMo
         _state.update {
             when (valueType) {
                 FieldType.NAME -> it.copy(name = value)
-                FieldType.SURNAME -> it.copy(surname = value)
+                FieldType.SURNAME -> it.copy(lastName = value)
                 FieldType.EMAIL -> it.copy(email = value)
                 FieldType.PASSWORD -> it.copy(password = value)
             }
