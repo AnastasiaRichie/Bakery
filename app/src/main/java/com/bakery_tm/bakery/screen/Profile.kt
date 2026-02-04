@@ -1,6 +1,8 @@
 package com.bakery_tm.bakery.screen
 
 import android.graphics.Bitmap
+import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,6 +19,9 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +60,7 @@ import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
+import kotlin.text.forEach
 import android.graphics.Color as AndroidColor
 
 @Composable
@@ -68,6 +75,7 @@ fun ProfileScreen(
     onEditClicked: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
+    val avatar by viewModel.selectedAvatar.collectAsState()
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -92,7 +100,12 @@ fun ProfileScreen(
         }
 
         model != null -> {
-            ProfileScreenUi(modifier, model, onEditClicked) {//viewModel::onEditClicked
+            ProfileScreenUi(
+                modifier,
+                model,
+                avatar,
+                onEditClicked
+            ) {
                 orderViewModel.onLogoutClicked()
                 shoppingCartViewModel.onLogoutClicked()
                 viewModel.onLogOutClicked(model.email)
@@ -117,14 +130,12 @@ fun ProfileScreen(
 fun ProfileScreenUi(
     modifier: Modifier,
     model: UserStateModel,
-    //onEditClicked: (AccountFieldType) -> Unit,
+    avatar: ProfileAvatar,
     onEditClicked: () -> Unit,
     onLogOutClicked: () -> Unit
 ) {
-
-
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        item { ProfileHeader(model, onEditClicked) }
+    LazyColumn(modifier = modifier.fillMaxSize().background(BackgroundDark)) {
+        item { ProfileHeader(model, avatar, onEditClicked) }
         item { QrCard(model.email) }
         item { Spacer(Modifier.height(16.dp)) }
         item {
@@ -290,10 +301,14 @@ fun GuestProfileScreen(
     val dark = isSystemInDarkTheme()
     val background = if (dark) BackgroundDark else BackgroundLight
 
-    Box(modifier = modifier.fillMaxSize().background(background)) {
+    Box(modifier = modifier
+        .fillMaxSize()
+        .background(background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.weight(1f).padding(horizontal = 24.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = CenterHorizontally
             ) {
                 Spacer(Modifier.height(32.dp))
@@ -310,7 +325,10 @@ fun GuestProfileScreen(
 @Composable
 fun GuestProfileTopBar() {
     Box(
-        modifier = Modifier.fillMaxWidth().background(Color.White.copy(alpha = 0.9f)).padding(vertical = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White.copy(alpha = 0.9f))
+            .padding(vertical = 16.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -373,60 +391,23 @@ fun GuestButtons(onLogInClicked: () -> Unit, onRegisterClicked: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Button(
             onClick = onLogInClicked,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Primary)
         ) {
             Text("Войти", fontWeight = FontWeight.Bold, color = BackgroundDark)
         }
         OutlinedButton(
             onClick = onRegisterClicked,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
             border = BorderStroke(2.dp, Primary.copy(alpha = 0.2f))
         ) {
             Text("Зарегистрироваться", color = Primary, fontWeight = FontWeight.Bold)
         }
     }
-}
-
-@Composable
-fun AccountRow(
-    label: String,
-    value: String? = null,
-    type: AccountFieldType,
-    underline: Boolean = false,
-    onEditClicked: (AccountFieldType) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        verticalAlignment = Bottom,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column(
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = label, fontWeight = FontWeight.Medium)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = value.orEmpty(),
-                color = Color.Gray,
-                fontSize = 16.sp,
-                textDecoration = if (underline) TextDecoration.Underline else null,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Icon(
-            painter = painterResource(android.R.drawable.ic_menu_edit),
-            contentDescription = "Edit",
-            tint = Color.Gray,
-            modifier = Modifier
-                .size(28.dp)
-                .padding(horizontal = 4.dp)
-                .clickable { onEditClicked(type) }
-        )
-    }
-    HorizontalDivider(color = Color(0xFFEAEAEA))
 }
 
 @Composable
@@ -496,11 +477,15 @@ fun QrCard(email: String) {
         QrWithCloseDialog(bitmap.asImageBitmap()) { showQr = false }
     }
     Card(
-        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF193322))
+        colors = CardDefaults.cardColors(containerColor = InputDark)
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp, top = 16.dp)) {
+        Column(modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 4.dp, top = 16.dp)) {
             Text("Ваш QR-код", fontWeight = FontWeight.Bold, fontSize = 20.sp)
             Text(
                 "Отсканируйте на кассе для получения заказа.",
@@ -538,9 +523,11 @@ fun QrCard(email: String) {
 }
 
 @Composable
-fun ProfileHeader(user: UserStateModel, onEditClicked: () -> Unit) {
+fun ProfileHeader(user: UserStateModel, avatar: ProfileAvatar, onEditClicked: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         horizontalAlignment = CenterHorizontally
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -553,7 +540,7 @@ fun ProfileHeader(user: UserStateModel, onEditClicked: () -> Unit) {
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(R.drawable.profile_icon),
+                painter = painterResource(avatar.iconRes),
                 modifier = Modifier.size(120.dp).clip(CircleShape),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(Color.Gray)
@@ -563,12 +550,4 @@ fun ProfileHeader(user: UserStateModel, onEditClicked: () -> Unit) {
         Text(user.name + " " + user.surname, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
         Text(user.email, color = Primary)
     }
-}
-
-
-enum class AccountFieldType {
-    NAME,
-    SURNAME,
-    EMAIL,
-    PASSWORD,
 }

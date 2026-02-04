@@ -1,6 +1,5 @@
 package com.bakery_tm.bakery.screen
 
-import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,14 +17,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -36,13 +34,10 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,8 +47,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -129,7 +127,7 @@ fun ShoppingCartScreenUi(
             ) {
                 if (!isLoggedIn) { item { GuestBanner(onLoginClick) } }
                 item { AddressSelector(mockedAddresses, address) { address = it } }
-                item { SectionHeader(cartItems.size) }
+                item { SectionHeader(cartItems.sumOf { it.item.quantity }) }
                 if (cartItems.isEmpty()) {
                     item { EmptyState(onToFoodListNavigate) }
                 } else {
@@ -382,19 +380,16 @@ fun AddressSelector(
             }
         }
     }
-
 }
 
 @Composable
 fun SectionHeader(count: Int) {
     Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text("Заказ", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Text("$count элементов", color = Primary, fontWeight = FontWeight.Medium)
+        Text(elementsLabel(count), color = Primary, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -404,23 +399,58 @@ fun CartItemRow(
     onQuantityChanged: (Boolean, Long) -> Unit,
     onDeleteClicked: (Long) -> Unit,
 ) {
+    val context = LocalContext.current
+    val foodIconRes = remember(item.product.foodImageName) {
+        context.resources.getIdentifier(item.product.foodImageName, "drawable", context.packageName)
+    }
     Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().padding(vertical = 12.dp).padding(start = 10.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(item.product.name, fontWeight = FontWeight.Bold)
-                Text(item.product.price, fontWeight = FontWeight.Bold)
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                ) {
+                    if (foodIconRes != 0) {
+                        Image(
+                            painter = painterResource(foodIconRes),
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            alignment = Alignment.Center,
+                            contentDescription = null
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .background(Color.Gray)
+                                .padding(12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No Image", color = Color.White)
+                        }
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.padding(horizontal = 8.dp).weight(1f)) {
+                        Text(
+                            text = item.product.name,
+                            fontWeight = FontWeight.Bold,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1
+                        )
+                        Text(item.product.description, fontSize = 13.sp, color = Color.Gray)
+                    }
+                    Text(item.product.price, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
             }
-            Text(item.product.description, fontSize = 13.sp, color = Color.Gray)
             Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -429,32 +459,10 @@ fun CartItemRow(
                     initialValue = item.item.quantity,
                     onValueChanged = { onQuantityChanged(it, item.product.productId) }
                 )
-                //QuantitySelector(item = item, onQuantityChanged = onQuantityChanged)
                 IconButton(onClick = { onDeleteClicked(item.item.cartItemId) }) {
                     Icon(Icons.Default.Delete, null, tint = Color.Red)
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun QuantitySelector(
-    item: CartItemWithProduct,
-    onQuantityChanged: (Boolean, Long) -> Unit
-) {
-    Row(
-        Modifier
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = { if (item.item.quantity > 1) onQuantityChanged(false, item.product.productId) }) {
-            Icon(Icons.Default.Delete, null)
-        }
-        Text("${item.item.quantity}", fontWeight = FontWeight.Bold)
-        IconButton(onClick = { onQuantityChanged(true, item.product.productId) }) {
-            Icon(Icons.Default.Add, null)
         }
     }
 }
@@ -472,7 +480,7 @@ fun EmptyState(onToFoodListNavigate: () -> Unit) {
         Text("Ваша корзина пустая", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Text("Похоже, что вы пока ничего не добавили.", color = Color.Gray, textAlign = TextAlign.Center)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onToFoodListNavigate, colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
+        Button(onClick = onToFoodListNavigate, colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundDark)) {
             Text("К покупкам!")
         }
     }
@@ -520,4 +528,17 @@ fun SummaryRow(label: String, value: Double, highlight: Boolean = false) {
             fontWeight = if (highlight) FontWeight.Bold else FontWeight.Normal
         )
     }
+}
+
+fun elementsLabel(count: Int): String {
+    val mod10 = count % 10
+    val mod100 = count % 100
+
+    val word = when {
+        mod10 == 1 && mod100 != 11 -> "элемент"
+        mod10 in 2..4 && mod100 !in 12..14 -> "элемента"
+        else -> "элементов"
+    }
+
+    return "$count $word"
 }

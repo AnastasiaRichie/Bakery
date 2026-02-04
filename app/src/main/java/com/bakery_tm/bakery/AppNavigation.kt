@@ -32,7 +32,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.bakery_tm.bakery.domain.AuthState
-import com.bakery_tm.bakery.screen.AccountFieldType
 import com.bakery_tm.bakery.screen.EditScreen
 import com.bakery_tm.bakery.screen.FoodDetailsScreen
 import com.bakery_tm.bakery.screen.FoodScreen
@@ -164,10 +163,11 @@ fun AppNavigation(
                             modifier = Modifier.padding(innerPadding),
                             viewModel = foodViewModel,
                             userViewModel = userViewModel,
+                            shoppingCartViewModel = shoppingCartViewModel,
                             isLoggedIn = authState == AuthState.Authenticated,
-                            onFoodClick = { navController.navigate(foodDetails(it)) },
+                            onFoodClicked = { navController.navigate(foodDetails(it)) },
                             onCartClicked = { selectedTabIndex = 1 },
-                            onRegisterClick = { navController.navigate(REGISTRATION) }
+                            onRegisterClicked = { navController.navigate(REGISTRATION) }
                         )
                         1 -> ShoppingCartScreen(
                             viewModel = shoppingCartViewModel,
@@ -180,6 +180,7 @@ fun AppNavigation(
                             modifier = Modifier.padding(innerPadding),
                             viewModel = orderViewModel,
                             isLoggedIn = authState == AuthState.Authenticated,
+                            onStartOrderingClicked = { selectedTabIndex = 0 },
                             onLoginClicked = { navController.navigate(LOGIN) },
                         ) { orderId, index ->
                             navController.navigate(historyDetails(orderId, index))
@@ -196,8 +197,8 @@ fun AppNavigation(
                             },
                             onLogInClicked = { navController.navigate(LOGIN) },
                             onRegisterClicked = { navController.navigate(REGISTRATION) },
-                            onEditClicked = { //type ->
-                                //navController.navigate(editType(type.name))
+                            onEditClicked = {
+                                navController.navigate(EDIT)
                             }
                         )
                     }
@@ -205,33 +206,30 @@ fun AppNavigation(
             }
             composable(
                 FOOD_DETAILS,
-                arguments = listOf(navArgument(FOOD_ID) { type = NavType.LongType })
+                arguments = listOf(navArgument(PRODUCT_ID) { type = NavType.LongType })
             ) {
-                val foodId = it.arguments?.getLong(FOOD_ID)
-                foodId?.let {
+                val productId = it.arguments?.getLong(PRODUCT_ID)
+                productId?.let {
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         FoodDetailsScreen(
                             viewModel = foodViewModel,
                             shoppingCartViewModel = shoppingCartViewModel,
                             isLoggedIn = authState == AuthState.Authenticated,
                             modifier = Modifier.padding(innerPadding),
-                            foodId = foodId
+                            productId = productId
                         ) { navController.popBackStack() }
                     }
                 } ?: run {
                     Toast.makeText(context, "Screen not found", Toast.LENGTH_SHORT).show()
                 }
             }
-            composable(
-                EDIT,
-                arguments = listOf(navArgument(EDIT_TYPE) { type = NavType.StringType })
-            ) {
-                val stringType = it.arguments?.getString(EDIT_TYPE)
-                val type = AccountFieldType.valueOf(stringType.orEmpty())
+            composable(EDIT) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    EditScreen(userViewModel, Modifier.padding(innerPadding), type) {
-                        navController.popBackStack()
-                    }
+                    EditScreen(
+                        viewModel = userViewModel,
+                        modifier = Modifier.padding(innerPadding),
+                        onBackClicked = { navController.popBackStack() }
+                    )
                 }
             }
             composable(
@@ -250,6 +248,7 @@ fun AppNavigation(
                             modifier = Modifier.padding(innerPadding),
                             orderId = it,
                             index = index ?: 0,
+                            onBackClicked = { navController.popBackStack() }
                         )
                     }
                 } ?: run {
@@ -264,14 +263,13 @@ const val REGISTRATION = "registration"
 const val LOGIN = "login"
 const val FORGOT_PASS = "forgot"
 const val FOOD = "food"
-const val FOOD_ID = "foodId"
+const val PRODUCT_ID = "productId"
 const val ORDER_ID = "orderId"
 const val ORDER_INDEX = "orderIndex"
-const val FOOD_DETAILS = "food/{foodId}"
-const val EDIT = "edit/{type}"
-const val EDIT_TYPE = "type"
+const val FOOD_DETAILS = "food/{productId}"
+const val EDIT = "edit"
 const val HISTORY_DETAILS = "history/{orderId}/{orderIndex}"
 
-fun foodDetails(foodId: Long) = "food/$foodId"
+fun foodDetails(productId: Long) = "food/$productId"
 fun editType(type: String) = "edit/$type"
 fun historyDetails(orderId: Long, index: Int) = "history/$orderId/$index"

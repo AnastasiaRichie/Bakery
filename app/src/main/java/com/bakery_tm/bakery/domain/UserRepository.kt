@@ -1,7 +1,7 @@
 package com.bakery_tm.bakery.domain
 
 import com.bakery_tm.bakery.data.database.entity.UserEntity
-import com.bakery_tm.bakery.screen.AccountFieldType
+import com.bakery_tm.bakery.models.UserStateModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -20,5 +20,5 @@ interface UserRepository {
 
     suspend fun registerUser(data: UserEntity)
 
-    suspend fun updateField(fieldType: AccountFieldType, value: String, userId: Int)
+    suspend fun updateProfileData(model: UserStateModel, userId: Int)
 }

@@ -26,10 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -42,8 +39,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -72,6 +67,7 @@ import com.bakery_tm.bakery.data.database.entity.CartItemEntity
 import com.bakery_tm.bakery.models.FoodModel
 import com.bakery_tm.bakery.view_model.FoodViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
+import kotlin.random.Random
 
 @Composable
 fun FoodDetailsScreen(
@@ -79,7 +75,7 @@ fun FoodDetailsScreen(
     shoppingCartViewModel: ShoppingCartViewModel,
     isLoggedIn: Boolean,
     modifier: Modifier,
-    foodId: Long,
+    productId: Long,
     onBackClicked: () -> Unit
 ) {
     val selected by viewModel.selected.collectAsState()
@@ -89,9 +85,9 @@ fun FoodDetailsScreen(
         lifecycleOwner.lifecycle.currentStateAsState().value == Lifecycle.State.RESUMED || lifecycleOwner.lifecycle.currentStateAsState().value == Lifecycle.State.STARTED
     val dark = isSystemInDarkTheme()
     val background = if (dark) BackgroundDark else BackgroundLight
-    LaunchedEffect(foodId) {
-        shoppingCartViewModel.getCartInfoByProductId(foodId)
-        viewModel.initSelected(foodId)
+    LaunchedEffect(productId) {
+        shoppingCartViewModel.getCartInfoByProductId(productId)
+        viewModel.initSelected(productId)
     }
     val isReady = selected != null && !state.isLoading
     BackHandler {
@@ -108,10 +104,10 @@ fun FoodDetailsScreen(
                 background = background,
                 cartItem = state.cartItem,
                 onQuantityChanged = { add ->
-                    shoppingCartViewModel.updateQuantity(add, it.foodId)
+                    shoppingCartViewModel.updateQuantity(add, it.productId)
                 },
                 onAddClicked = {
-                    shoppingCartViewModel.addProduct(it.foodId)
+                    shoppingCartViewModel.addProduct(it.productId)
                 },
                 onBackClicked = {
                     shoppingCartViewModel.updateSelectedState()
@@ -158,10 +154,10 @@ fun FoodDetailsScreenUi(
                         Text(model.description, color = Color.Gray)
                     }
                 }
-                item { NutritionSection(model) }
+                item { NutritionSection() }
                 item { IngredientsSection(model.fullDescription) }
                 item { AllergensSection(model.allergens) }
-                item { Spacer(Modifier.height(120.dp)) }
+                item { Spacer(Modifier.height(20.dp)) }
             }
 
 
@@ -265,19 +261,20 @@ fun HeroImage(@DrawableRes icon: Int, onBack: () -> Unit) {
 }
 
 @Composable
-fun NutritionSection(model: FoodModel) {
+fun NutritionSection() {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text("Nutritional Value", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text("Пищевая ценность", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
 //            NutritionItem("Cals", model.calories)
 //            NutritionItem("Fat", model.fat)
 //            NutritionItem("Carbs", model.carbs)
 //            NutritionItem("Prot", model.protein)
-            NutritionItem("Cals", "12")
-            NutritionItem("Fat", "34")
-            NutritionItem("Carbs", "56")
-            NutritionItem("Prot", "78")
+
+            NutritionItem("Ккал", Random.nextInt(1, 11).toString())
+            NutritionItem("Жиры", Random.nextInt(1, 11).toString())
+            NutritionItem("Угл", Random.nextInt(1, 11).toString())
+            NutritionItem("Белки", Random.nextInt(1, 11).toString())
         }
     }
 }
@@ -299,40 +296,40 @@ fun NutritionItem(label: String, value: String) {
 
 @Composable
 fun IngredientsSection(text: String) {
-    ExpandableSection(
-        icon = Icons.Default.Menu,
-        title = "Ingredients"
-    ) {
+    ExpandableSection(icon = Icons.Default.Menu, title = "Состав") {
         Text(text, fontSize = 13.sp, color = Color.Gray)
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-//fun AllergensSection(list: List<String>) {
-fun AllergensSection(list: String) {
-    Text(list)
+fun AllergensSection(allergens: List<String>) {
     ExpandableSection(
         icon = Icons.Default.Warning,
         iconColor = Color.Yellow,
         title = "Аллергены"
     ) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            list.forEach {
-                AssistChip(
-                    onClick = {},
-                    colors = AssistChipDefaults.assistChipColors(containerColor = Color.Yellow.copy(alpha = 0.1f)),
-                    border = BorderStroke(1.dp, Color.Yellow.copy(alpha = 0.1f)),
-                    label = { Text(it.uppercase(), color = Color.Yellow, fontSize = 12.sp) }
-                )
+        if (allergens.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                allergens.forEach {
+                    AssistChip(
+                        onClick = {},
+                        colors = AssistChipDefaults.assistChipColors(containerColor = Color.Yellow.copy(alpha = 0.1f)),
+                        border = BorderStroke(1.dp, Color.Yellow.copy(alpha = 0.1f)),
+                        label = { Text(it.uppercase(), color = Color.Yellow, fontSize = 12.sp) }
+                    )
+                }
             }
+        } else {
+            Text("Отсутствуют", fontSize = 13.sp, color = Color.Gray)
         }
     }
 }
 
 @Composable
 fun ExpandableSection(
-    icon: ImageVector,
+    icon: ImageVector? = null,
+    @DrawableRes image: Int? = null,
     iconColor: Color = Primary,
     title: String,
     content: @Composable () -> Unit
@@ -347,7 +344,8 @@ fun ExpandableSection(
                 .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, null, tint = iconColor)
+            icon?.let { Icon(it, null, tint = iconColor) }
+            image?.let { Icon(painterResource(it), null, tint = iconColor) }
             Spacer(Modifier.width(12.dp))
             Text(title, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Icon(

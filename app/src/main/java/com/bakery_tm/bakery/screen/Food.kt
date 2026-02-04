@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -27,7 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -37,13 +36,14 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -57,10 +57,11 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bakery_tm.bakery.R
+import com.bakery_tm.bakery.data.database.relations.CartItemWithProduct
 import com.bakery_tm.bakery.models.FoodModel
 import com.bakery_tm.bakery.models.FoodType
 import com.bakery_tm.bakery.view_model.FoodViewModel
+import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
 import java.time.LocalTime
 
@@ -70,21 +71,27 @@ fun FoodScreen(
     isLoggedIn: Boolean,
     viewModel: FoodViewModel,
     userViewModel: UserViewModel,
-    onFoodClick: (Long) -> Unit,
+    shoppingCartViewModel: ShoppingCartViewModel,
+    onFoodClicked: (Long) -> Unit,
     onCartClicked: () -> Unit,
-    onRegisterClick: () -> Unit,
+    onRegisterClicked: () -> Unit,
 ) {
-    val state by viewModel.state.collectAsState()
+    val foodList by viewModel.state.collectAsState()
     val userState by userViewModel.state.collectAsState()
+    val avatar by userViewModel.selectedAvatar.collectAsState()
+    val cartItems by shoppingCartViewModel.cartItems.collectAsState()
 
     FoodScreenUi(
-        modifier,
-        state,
+        modifier = modifier,
+        foodList = foodList,
+        cartItems = cartItems,
+        avatar = avatar,
         isLoggedIn = isLoggedIn,
         user = userState.userStateModel?.name.orEmpty() + " " + userState.userStateModel?.surname,
-        onFoodClick,
-        onCartClicked,
-        onRegisterClick
+        onFoodClicked = onFoodClicked,
+        onAddClicked = shoppingCartViewModel::addOrDeleteCartItem,
+        onCartClicked = onCartClicked,
+        onRegisterClicked = onRegisterClicked
     )
 }
 
@@ -92,23 +99,22 @@ fun FoodScreen(
 fun FoodScreenUi(
     modifier: Modifier,
     foodList: List<FoodModel>,
+    cartItems: List<CartItemWithProduct>,
+    avatar: ProfileAvatar,
     isLoggedIn: Boolean,
     user: String,
-    onFoodClick: (Long) -> Unit,
+    onFoodClicked: (Long) -> Unit,
+    onAddClicked: (Long) -> Unit,
     onCartClicked: () -> Unit,
-    onRegisterClick: () -> Unit,
+    onRegisterClicked: () -> Unit,
 ) {
     val dark = isSystemInDarkTheme()
     val background = if (dark) BackgroundDark else BackgroundLight
     var selectedTab by remember { mutableIntStateOf(0) }
-    Box(modifier
-        .fillMaxSize()
-        .background(background)) {
+    Box(modifier.fillMaxSize().background(background)) {
         Column {
-            DashboardTopBar(isLoggedIn, user)
-            if (!isLoggedIn) {
-                ProductGuestBanner(onRegisterClick)
-            }
+            DashboardTopBar(isLoggedIn, user, avatar)
+            if (!isLoggedIn) { ProductGuestBanner(onRegisterClicked) }
             val tabs = listOf("Все", "Еда", "Напитки")
             Row(
                 modifier = Modifier
@@ -122,13 +128,11 @@ fun FoodScreenUi(
                             .padding(end = 8.dp)
                             .clip(RoundedCornerShape(32.dp))
                             .background(
-                                color = if (isSelected) Primary.copy(alpha = 0.1f)
-                                else Color.White
+                                color = if (isSelected) Primary.copy(alpha = 0.1f) else Color.White
                             )
                             .border(
                                 width = 0.5.dp,
-                                color = if (isSelected) InputDark
-                                else Color.Gray,
+                                color = if (isSelected) InputDark else Color.Gray,
                                 shape = RoundedCornerShape(32.dp)
                             )
                             .clickable { selectedTab = index }
@@ -155,86 +159,39 @@ fun FoodScreenUi(
                         1 -> foodList.filter { it.foodType == FoodType.FLOUR }
                         2 -> foodList.filter { it.foodType == FoodType.DRINK }
                         else -> foodList
-                    }) { ProductCard(product = it, onProductClick = onFoodClick, isLoggedIn = isLoggedIn) }
+                    }) {
+                    ProductCard(
+                        product = it,
+                        cartItems = cartItems,
+                        onProductClicked = onFoodClicked,
+                        onAddClicked = onAddClicked,
+                        isLoggedIn = isLoggedIn
+                    )
+                }
             }
         }
-        CartFab(2, modifier = Modifier
-            .align(Alignment.BottomEnd)
-            .padding(12.dp), onCartClicked = onCartClicked)
+        val size = cartItems.sumOf { it.item.quantity }
+        CartFab(size, modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp), onCartClicked = onCartClicked)
     }
 }
 
 @Composable
-fun FoodItem(food: FoodModel, onItemClick: (Long) -> Unit) {
-    val context = LocalContext.current
-    val foodIconRes = remember(food.foodImageName) {
-        context.resources.getIdentifier(food.foodImageName, "drawable", context.packageName)
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { onItemClick(food.foodId) }
-            .background(
-                color = Color.White,
-                shape = RoundedCornerShape(16.dp)
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        if (foodIconRes != 0) {
-            Image(
-                painter = painterResource(foodIconRes),
-                modifier = Modifier
-                    .width(64.dp)
-                    .height(64.dp)
-                    .padding(end = 16.dp, start = 8.dp),
-                contentDescription = null
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .background(Color.Gray)
-                    .padding(12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No Image", color = Color.White)
-            }
-        }
-
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = food.name,
-                color = Color.Black,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = food.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-            )
-        }
-        Text(
-            text = food.price,
-            color = Color.Black,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(start = 8.dp, end = 8.dp))
-    }
-}
-
-@Composable
-fun ProductCard(product: FoodModel, onProductClick: (Long) -> Unit, isLoggedIn: Boolean) {
+fun ProductCard(
+    product: FoodModel,
+    cartItems: List<CartItemWithProduct>,
+    onProductClicked: (Long) -> Unit,
+    onAddClicked: (Long) -> Unit,
+    isLoggedIn: Boolean
+) {
     val context = LocalContext.current
     val foodIconRes = remember(product.foodImageName) {
         context.resources.getIdentifier(product.foodImageName, "drawable", context.packageName)
     }
-    Column(modifier = Modifier.clickable { onProductClick(product.foodId) }) {
+    var added by remember { mutableStateOf(cartItems.find { it.product.productId == product.productId } != null) }
+    LaunchedEffect(cartItems) {
+        added = cartItems.find { it.product.productId == product.productId } != null
+    }
+    Column(modifier = Modifier.clickable { onProductClicked(product.productId) }) {
         Box(
             modifier = Modifier
                 .aspectRatio(4f / 3f)
@@ -259,17 +216,6 @@ fun ProductCard(product: FoodModel, onProductClick: (Long) -> Unit, isLoggedIn: 
                     Text("No Image", color = Color.White)
                 }
             }
-            //TODO (обработать название)
-            //Image(painter = painterResource(R.drawable.croissant), contentDescription = null)
-
-//            IconButton(
-//                onClick = {},
-//                modifier = Modifier
-//                    .align(Alignment.TopEnd)
-//                    .padding(8.dp)
-//            ) {
-//                Icon(Icons.Default.FavoriteBorder, null, tint = Color.White)
-//            }
         }
         Row(
             Modifier.padding(4.dp),
@@ -277,18 +223,23 @@ fun ProductCard(product: FoodModel, onProductClick: (Long) -> Unit, isLoggedIn: 
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.name, fontWeight = FontWeight.Bold)
-                Text(product.foodType.name, fontSize = 12.sp, color = Color.Gray)
+                Text(product.description, fontSize = 12.sp, color = Color.Gray)
                 Text(product.price, color = Primary, fontWeight = FontWeight.Bold)
             }
             if (isLoggedIn) {
                 IconButton(
-                    onClick = {},
+                    onClick = { onAddClicked(product.productId) },
                     modifier = Modifier
                         .size(32.dp)
+                        .align(Alignment.CenterVertically)
                         .background(Primary, RoundedCornerShape(8.dp))
                         .padding(horizontal = 4.dp)
                 ) {
-                    Icon(Icons.Default.Add, null, tint = BackgroundDark)
+                    if (added) {
+                        Icon(Icons.Default.Check, null, tint = BackgroundDark)
+                    } else {
+                        Icon(Icons.Default.Add, null, tint = BackgroundDark)
+                    }
                 }
             }
         }
@@ -317,7 +268,9 @@ fun CartFab(count: Int, modifier: Modifier, onCartClicked: () -> Unit) {
                     color = Color.Black,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.align(Alignment.Center).offset(y = (-3).dp),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .offset(y = (-3).dp),
                     style = LocalTextStyle.current.copy(
                         platformStyle = PlatformTextStyle(includeFontPadding = false)
                     )
@@ -363,7 +316,7 @@ fun SearchBar() {
 }
 
 @Composable
-fun DashboardTopBar(isLoggedIn: Boolean, user: String) {
+fun DashboardTopBar(isLoggedIn: Boolean, user: String, avatar: ProfileAvatar) {
     val greeting = remember { getGreeting() }
     Column {
         Row(
@@ -371,7 +324,16 @@ fun DashboardTopBar(isLoggedIn: Boolean, user: String) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).clip(CircleShape).background(Primary))
+                Box(Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Primary)) {
+                    Image(
+                        modifier = Modifier.align(Alignment.Center),
+                        painter = painterResource(avatar.iconRes),
+                        contentDescription = null
+                    )
+                }
                 Spacer(Modifier.width(12.dp))
                 Column {
                     Text(greeting, fontSize = 12.sp, color = Color.Gray)
