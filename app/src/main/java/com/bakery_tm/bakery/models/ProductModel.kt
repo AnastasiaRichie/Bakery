@@ -1,6 +1,6 @@
 package com.bakery_tm.bakery.models
 
-data class FoodModel(
+data class ProductModel(
     val productId: Long,
     val name: String,
     val weight: String,
@@ -8,6 +8,6 @@ data class FoodModel(
     val fullDescription: String,
     val allergens: List<String>,
     val price: String,
-    val foodImageName: String,
-    val foodType: FoodType = FoodType.FLOUR,
+    val productImageName: String,
+    val productType: ProductType,
 )

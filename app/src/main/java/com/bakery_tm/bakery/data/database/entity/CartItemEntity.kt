@@ -2,6 +2,7 @@ package com.bakery_tm.bakery.data.database.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.bakery_tm.bakery.domain.OrderRequestItem
 
 @Entity(tableName = "cart_items")
 data class CartItemEntity(
@@ -10,3 +11,5 @@ data class CartItemEntity(
     val productId: Long,
     val quantity: Int
 )
+
+fun CartItemEntity.toModel(): OrderRequestItem = OrderRequestItem(quantity = quantity, productId = productId)

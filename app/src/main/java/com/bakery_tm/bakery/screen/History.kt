@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.common.dateFormatter
 import com.bakery_tm.bakery.data.database.relations.OrderWithItems
+import com.bakery_tm.bakery.domain.OrderResponse
+import com.bakery_tm.bakery.domain.OrderState
 import com.bakery_tm.bakery.view_model.OrderViewModel
 
 @Composable
@@ -67,7 +69,7 @@ fun HistoryScreen(
 @Composable
 fun HistoryScreenUi(
     modifier: Modifier,
-    orders: List<Pair<OrderWithItems, Double>>,
+    orders: List<Pair<OrderResponse, Double>>,
     onOrderClicked: (Long, Int) -> Unit,
     reorder: (Long) -> Unit,
 ) {
@@ -171,19 +173,16 @@ fun OrderHistoryTopBar() {
 }
 
 @Composable
-fun OrderCard(order: Pair<OrderWithItems, Double>, index: Int, reorder: (Long) -> Unit, onOrderClicked: (Long, Int) -> Unit) {
+fun OrderCard(order: Pair<OrderResponse, Double>, index: Int, reorder: (Long) -> Unit, onOrderClicked: (Long, Int) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(InputDark, RoundedCornerShape(16.dp))
             .border(1.dp, Color.DarkGray, RoundedCornerShape(16.dp))
             .padding(16.dp)
-            .clickable { onOrderClicked(order.first.order.orderId, index) }
+            .clickable { onOrderClicked(order.first.orderId, index) }
     ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Column {
                 Text(
                     "Заказ #${index + 1}",
@@ -191,16 +190,16 @@ fun OrderCard(order: Pair<OrderWithItems, Double>, index: Int, reorder: (Long) -
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    dateFormatter(order.first.order.date,  "MMM dd, yyyy • HH:mm")?.replaceFirstChar { it.uppercase() }.orEmpty(),
+                    dateFormatter(order.first.date,  "MMM dd, yyyy • HH:mm")?.replaceFirstChar { it.uppercase() }.orEmpty(),
                     fontSize = 12.sp,
                     color = Color.Gray
                 )
             }
-            StatusBadge("Получен")
+            StatusBadge(if (order.first.orderState == OrderState.ORDERED) "Заказан" else "Получен")
         }
         Spacer(Modifier.height(12.dp))
         Text(
-            text = order.first.items.joinToString { "${it.orderItem.quantity} x ${it.product.name}" },
+            text = order.first.items.joinToString { "${it.quantity} x ${it.product.name}" },
             fontSize = 13.sp,
             color = Color.LightGray,
             fontStyle = FontStyle.Italic
@@ -228,7 +227,7 @@ fun OrderCard(order: Pair<OrderWithItems, Double>, index: Int, reorder: (Long) -
                 )
             }
             Button(
-                onClick = { reorder(order.first.order.orderId) },
+                onClick = { reorder(order.first.orderId) },
                 colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundDark),
             ) { Text("Повторить заказ") }
         }

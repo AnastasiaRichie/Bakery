@@ -51,6 +51,9 @@ import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.data.database.relations.OrderItemWithProduct
 import com.bakery_tm.bakery.data.database.relations.OrderWithItems
+import com.bakery_tm.bakery.domain.OrderResponse
+import com.bakery_tm.bakery.domain.OrderResponseItem
+import com.bakery_tm.bakery.domain.OrderState
 import com.bakery_tm.bakery.models.Address
 import com.bakery_tm.bakery.view_model.OrderViewModel
 
@@ -77,7 +80,7 @@ fun HistoryDetailsScreen(
                 modifier,
                 it,
                 index,
-                { viewModel.reorder(it.order.orderId) },
+                { viewModel.reorder(it.orderId) },
                 onBackClicked,
             )
         }
@@ -88,17 +91,15 @@ fun HistoryDetailsScreen(
 @Composable
 fun HistoryDetailsUi(
     modifier: Modifier,
-    order: OrderWithItems,
+    order: OrderResponse,
     index: Int,
     onReorderClicked: () -> Unit,
     onBackClicked: () -> Unit,
 ) {
     val dark = isSystemInDarkTheme()
     val background = if (dark) BackgroundDark else BackgroundLight
-    Column(modifier = modifier
-        .fillMaxSize()
-        .background(background)) {
-        OrderDetailsTopBar(index, onBackClicked)
+    Column(modifier = modifier.fillMaxSize().background(background)) {
+        OrderDetailsTopBar(index, onBackClicked, order.orderState)
         LazyColumn(modifier = Modifier
             .padding(horizontal = 16.dp)
             .weight(1f)) {
@@ -109,7 +110,7 @@ fun HistoryDetailsUi(
                     Spacer(Modifier.height(12.dp))
                     PaymentSummary(order)
                     Spacer(Modifier.height(12.dp))
-                    PickupLocation(order.order.orderAddress)
+                    PickupLocation(order.address)
                     Spacer(Modifier.height(12.dp))
                 }
             }
@@ -119,7 +120,7 @@ fun HistoryDetailsUi(
 }
 
 @Composable
-fun OrderDetailsTopBar(index: Int, onBackClicked: () -> Unit) {
+fun OrderDetailsTopBar(index: Int, onBackClicked: () -> Unit, orderState: OrderState) {
     Row(
         modifier = Modifier.fillMaxWidth().background(BackgroundDark.copy(alpha = 0.9f)).padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -143,7 +144,7 @@ fun OrderDetailsTopBar(index: Int, onBackClicked: () -> Unit) {
             )
         }
         Text(
-            "Получен",
+            if (orderState == OrderState.ORDERED) "Заказан" else "Получен",
             modifier = Modifier
                 .padding(horizontal = 8.dp, vertical = 6.dp)
                 .background(Primary.copy(alpha = 0.2f), CircleShape)
@@ -202,8 +203,8 @@ fun OrderItemRow(title: String, subtitle: String, price: String, foodImageName: 
 }
 
 @Composable
-fun PaymentSummary(order: OrderWithItems) {
-    val orderSum = order.items.sumOf { it.product.price.replace(" BYN", "").toDouble() * it.orderItem.quantity }
+fun PaymentSummary(order: OrderResponse) {
+    val orderSum = order.items.sumOf { it.product.price.replace(" BYN", "").toDouble() * it.quantity }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionTitle("Сумма оплаты", painterResource(R.drawable.receipt_long),)
         GlassCard {
@@ -342,7 +343,7 @@ fun TransactionDate() {
 }
 
 @Composable
-fun OrderItems(orderItems: List<OrderItemWithProduct>) {
+fun OrderItems(orderItems: List<OrderResponseItem>) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -365,9 +366,9 @@ fun OrderItems(orderItems: List<OrderItemWithProduct>) {
         orderItems.forEachIndexed { index, item ->
             OrderItemRow(
                 item.product.name,
-                "Кол-во: ${item.orderItem.quantity}",
+                "Кол-во: ${item.quantity}",
                 item.product.price,
-                item.product.foodImageName
+                item.product.productImageName
             )
             if (index != orderItems.size - 1) {
                 HorizontalDivider(color = Color.White.copy(alpha = 0.05f))

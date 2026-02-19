@@ -1,6 +1,7 @@
 package com.bakery_tm.bakery.screen
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -73,6 +74,7 @@ fun ProfileScreen(
         }
     }
     val model = state.userStateModel
+    Log.e("qwe", "ProfileScreen modelmodel: " + model)
     when {
         state.isLoading -> {
             LoadingScreen()
@@ -87,7 +89,7 @@ fun ProfileScreen(
             ) {
                 orderViewModel.onLogoutClicked()
                 shoppingCartViewModel.onLogoutClicked()
-                viewModel.onLogOutClicked(model.email)
+                viewModel.onLogOutClicked()
             }
         }
         model == null -> {
@@ -108,7 +110,9 @@ fun ProfileScreenUi(
     onEditClicked: () -> Unit,
     onLogOutClicked: () -> Unit
 ) {
-    LazyColumn(modifier = modifier.fillMaxSize().background(BackgroundDark)) {
+    LazyColumn(modifier = modifier
+        .fillMaxSize()
+        .background(BackgroundDark)) {
         item { ProfileHeader(model, avatar, onEditClicked) }
         item { QrCard(model.email) }
         item { Spacer(Modifier.height(16.dp)) }
@@ -143,7 +147,9 @@ fun GuestProfileScreen(
         .background(background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.weight(1f).padding(horizontal = 24.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = CenterHorizontally
             ) {
                 Spacer(Modifier.height(32.dp))
@@ -359,13 +365,15 @@ fun ProfileHeader(user: UserStateModel, avatar: ProfileAvatar, onEditClicked: ()
         ) {
             Image(
                 painter = painterResource(avatar.iconRes),
-                modifier = Modifier.size(120.dp).clip(CircleShape),
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(Color.Gray)
             )
         }
         Spacer(Modifier.height(12.dp))
-        Text(user.name + " " + user.surname, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+        Text(user.name + " " + user.lastName, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
         Text(user.email, color = Primary)
     }
 }

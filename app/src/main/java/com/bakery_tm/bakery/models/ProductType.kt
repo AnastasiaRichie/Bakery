@@ -1,6 +1,6 @@
 package com.bakery_tm.bakery.models
 
-enum class FoodType {
+enum class ProductType {
     FLOUR,
     DRINK
 }

@@ -39,11 +39,9 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -57,13 +55,13 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bakery_tm.bakery.common.getGreeting
 import com.bakery_tm.bakery.data.database.relations.CartItemWithProduct
-import com.bakery_tm.bakery.models.FoodModel
-import com.bakery_tm.bakery.models.FoodType
+import com.bakery_tm.bakery.models.ProductModel
+import com.bakery_tm.bakery.models.ProductType
 import com.bakery_tm.bakery.view_model.FoodViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
-import java.time.LocalTime
 
 @Composable
 fun FoodScreen(
@@ -87,7 +85,7 @@ fun FoodScreen(
         cartItems = cartItems,
         avatar = avatar,
         isLoggedIn = isLoggedIn,
-        user = userState.userStateModel?.name.orEmpty() + " " + userState.userStateModel?.surname,
+        user = userState.userStateModel?.name.orEmpty() + " " + userState.userStateModel?.lastName,
         onFoodClicked = onFoodClicked,
         onAddClicked = shoppingCartViewModel::addOrDeleteCartItem,
         onCartClicked = onCartClicked,
@@ -98,7 +96,7 @@ fun FoodScreen(
 @Composable
 fun FoodScreenUi(
     modifier: Modifier,
-    foodList: List<FoodModel>,
+    foodList: List<ProductModel>,
     cartItems: List<CartItemWithProduct>,
     avatar: ProfileAvatar,
     isLoggedIn: Boolean,
@@ -116,11 +114,7 @@ fun FoodScreenUi(
             DashboardTopBar(isLoggedIn, user, avatar)
             if (!isLoggedIn) { ProductGuestBanner(onRegisterClicked) }
             val tabs = listOf("Все", "Еда", "Напитки")
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp, horizontal = 16.dp),
-            ) {
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp, horizontal = 16.dp)) {
                 tabs.forEachIndexed { index, title ->
                     val isSelected = selectedTab == index
                     Box(
@@ -156,8 +150,8 @@ fun FoodScreenUi(
                 items(
                     items = when (selectedTab) {
                         0 -> foodList
-                        1 -> foodList.filter { it.foodType == FoodType.FLOUR }
-                        2 -> foodList.filter { it.foodType == FoodType.DRINK }
+                        1 -> foodList.filter { it.productType == ProductType.FLOUR }
+                        2 -> foodList.filter { it.productType == ProductType.DRINK }
                         else -> foodList
                     }) {
                     ProductCard(
@@ -177,26 +171,19 @@ fun FoodScreenUi(
 
 @Composable
 fun ProductCard(
-    product: FoodModel,
+    product: ProductModel,
     cartItems: List<CartItemWithProduct>,
     onProductClicked: (Long) -> Unit,
     onAddClicked: (Long) -> Unit,
     isLoggedIn: Boolean
 ) {
     val context = LocalContext.current
-    val foodIconRes = remember(product.foodImageName) {
-        context.resources.getIdentifier(product.foodImageName, "drawable", context.packageName)
+    val foodIconRes = remember(product.productImageName) {
+        context.resources.getIdentifier(product.productImageName, "drawable", context.packageName)
     }
-    var added by remember { mutableStateOf(cartItems.find { it.product.productId == product.productId } != null) }
-    LaunchedEffect(cartItems) {
-        added = cartItems.find { it.product.productId == product.productId } != null
-    }
+    val added = cartItems.any { it.product.productId == product.productId }
     Column(modifier = Modifier.clickable { onProductClicked(product.productId) }) {
-        Box(
-            modifier = Modifier
-                .aspectRatio(4f / 3f)
-                .clip(RoundedCornerShape(16.dp))
-        ) {
+        Box(modifier = Modifier.aspectRatio(4f / 3f).clip(RoundedCornerShape(16.dp))) {
             if (foodIconRes != 0) {
                 Image(
                     painter = painterResource(foodIconRes),
@@ -207,20 +194,14 @@ fun ProductCard(
                 )
             } else {
                 Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(Color.Gray)
-                        .padding(12.dp),
+                    modifier = Modifier.size(80.dp).background(Color.Gray).padding(12.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("No Image", color = Color.White)
                 }
             }
         }
-        Row(
-            Modifier.padding(4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
+        Row(Modifier.padding(4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.name, fontWeight = FontWeight.Bold)
                 Text(product.description, fontSize = 12.sp, color = Color.Gray)
@@ -249,10 +230,7 @@ fun ProductCard(
 @Composable
 fun CartFab(count: Int, modifier: Modifier, onCartClicked: () -> Unit) {
     Box(modifier = modifier) {
-        FloatingActionButton(
-            onClick = onCartClicked,
-            containerColor = Primary
-        ) {
+        FloatingActionButton(onClick = onCartClicked, containerColor = Primary) {
             Icon(Icons.Default.ShoppingCart, null, tint = BackgroundDark)
         }
         if (count > 0) {
@@ -268,9 +246,7 @@ fun CartFab(count: Int, modifier: Modifier, onCartClicked: () -> Unit) {
                     color = Color.Black,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = (-3).dp),
+                    modifier = Modifier.align(Alignment.Center).offset(y = (-3).dp),
                     style = LocalTextStyle.current.copy(
                         platformStyle = PlatformTextStyle(includeFontPadding = false)
                     )
@@ -308,9 +284,7 @@ fun SearchBar() {
         onValueChange = {},
         placeholder = { Text("Найти кофе и снэки...") },
         leadingIcon = { Icon(Icons.Default.Search, null) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(12.dp)
     )
 }
@@ -324,10 +298,7 @@ fun DashboardTopBar(isLoggedIn: Boolean, user: String, avatar: ProfileAvatar) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(Primary)) {
+                Box(Modifier.size(40.dp).clip(CircleShape).background(Primary)) {
                     Image(
                         modifier = Modifier.align(Alignment.Center),
                         painter = painterResource(avatar.iconRes),
@@ -348,15 +319,5 @@ fun DashboardTopBar(isLoggedIn: Boolean, user: String, avatar: ProfileAvatar) {
             }
         }
         SearchBar()
-    }
-}
-
-fun getGreeting(): String {
-    val hour = LocalTime.now().hour
-    return when (hour) {
-        in 5..11 -> "Доброе утро!"
-        in 12..16 -> "Добрый день!"
-        in 17..21 -> "Добрый вечер!"
-        else -> "Доброй ночи!"
     }
 }
