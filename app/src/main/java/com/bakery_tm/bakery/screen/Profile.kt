@@ -42,6 +42,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.InputDark
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.view_model.OrderViewModel

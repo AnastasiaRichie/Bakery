@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.map
 
 class FoodRepositoryImpl(private val productDao: ProductDao, private val foodApi: FoodApi) : FoodRepository {
 
-    override suspend fun getProducts(): Flow<List<ProductDomainModel>> = flow {
+    override fun getProducts(): Flow<List<ProductDomainModel>> = flow {
         try {
             if (productDao.getAllProducts().isEmpty()) {
                 val products = foodApi.getProducts()

@@ -62,7 +62,6 @@ fun AppNavigation(
 ) {
     val navController = rememberNavController()
     val authState by userViewModel.authState.collectAsState(AuthState.Loading)
-    Log.e("qwe", "AppNavigation authState: " + authState)
     val context = LocalContext.current
     if (authState == AuthState.Loading) {
         SplashScreen()
@@ -75,6 +74,7 @@ fun AppNavigation(
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     LoginScreen(
                         modifier = Modifier.padding(innerPadding),
+                        isConnected = isConnected,
                         viewModel = registrationViewModel,
                         orderViewModel = orderViewModel,
                         shoppingCartViewModel = shoppingCartViewModel,
@@ -93,6 +93,9 @@ fun AppNavigation(
                     RegistrationScreen(
                         modifier = Modifier.padding(innerPadding),
                         viewModel = registrationViewModel,
+                        orderViewModel = orderViewModel,
+                        shoppingCartViewModel = shoppingCartViewModel,
+                        isConnected = isConnected,
                         onLoginClick = { navController.navigate(LOGIN) },
                     ) {
                         navController.navigate(FOOD) {
@@ -199,9 +202,7 @@ fun AppNavigation(
                             },
                             onLogInClicked = { navController.navigate(LOGIN) },
                             onRegisterClicked = { navController.navigate(REGISTRATION) },
-                            onEditClicked = {
-                                navController.navigate(EDIT)
-                            }
+                            onEditClicked = { navController.navigate(EDIT) }
                         )
                     }
                 }

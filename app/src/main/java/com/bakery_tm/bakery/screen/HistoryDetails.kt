@@ -49,6 +49,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.R
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.Glass
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.data.database.relations.OrderItemWithProduct
 import com.bakery_tm.bakery.data.database.relations.OrderWithItems
 import com.bakery_tm.bakery.domain.OrderResponse
@@ -220,7 +224,7 @@ fun PaymentSummary(order: OrderResponse) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "$orderSum BYN",
+                    "${"%.2f".format(orderSum)} BYN",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Primary

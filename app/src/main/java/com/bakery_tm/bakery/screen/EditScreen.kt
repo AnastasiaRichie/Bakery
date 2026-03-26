@@ -45,6 +45,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.BorderDark
+import com.bakery_tm.bakery.common.InputDark
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.view_model.UserViewModel

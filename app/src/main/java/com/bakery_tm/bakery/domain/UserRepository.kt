@@ -1,5 +1,6 @@
 package com.bakery_tm.bakery.domain
 
+import com.bakery_tm.bakery.data.api.UserResponse
 import com.bakery_tm.bakery.data.database.entity.UserEntity
 import com.bakery_tm.bakery.models.UserStateModel
 import kotlinx.coroutines.flow.Flow
@@ -7,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 interface UserRepository {
 
     fun getUser(): Flow<UserEntity?>
+    suspend fun getUserByEmail(email: String): UserResponse?
 
     suspend fun insertUser(user: UserEntity)
 
@@ -17,4 +19,5 @@ interface UserRepository {
     suspend fun login(email: String, password: String)
 
     suspend fun updateUser(name: String?, lastName: String?, email: String?, password: String?)
+    suspend fun updateUserPassword(email: String, password: String)
 }

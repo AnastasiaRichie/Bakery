@@ -57,6 +57,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.bakery_tm.bakery.R
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.MutedTextDark
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.domain.AuthState
 import com.bakery_tm.bakery.models.FieldType
 import com.bakery_tm.bakery.models.NavigationEvent
@@ -68,6 +72,7 @@ import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 @Composable
 fun LoginScreen(
     modifier: Modifier,
+    isConnected: Boolean,
     viewModel: RegistrationViewModel,
     shoppingCartViewModel: ShoppingCartViewModel,
     orderViewModel: OrderViewModel,
@@ -111,6 +116,7 @@ fun LoginScreen(
         userStateModel = state,
         error = error,
         background = background,
+        isConnected = isConnected,
         darkTheme = darkTheme,
         showPassword = showPassword,
         onLoginClick = viewModel::onLoginClick,
@@ -141,6 +147,7 @@ fun LoginScreenUi(
     userStateModel: UserStateModel,
     error: String,
     background: Color,
+    isConnected: Boolean,
     darkTheme: Boolean,
     showPassword: Boolean,
     onLoginClick: (String, String) -> Unit,
@@ -154,14 +161,18 @@ fun LoginScreenUi(
     onShowPasswordChanged: (Boolean) -> Unit,
 ) {
     Box(
-        modifier = modifier.fillMaxSize().background(background),
+        modifier = modifier
+            .fillMaxSize()
+            .background(background),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             tonalElevation = 6.dp,
             shadowElevation = 12.dp,
             shape = RoundedCornerShape(24.dp),
-            modifier = Modifier.width(390.dp).height(844.dp)
+            modifier = Modifier
+                .width(390.dp)
+                .height(844.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -169,7 +180,17 @@ fun LoginScreenUi(
                     .verticalScroll(rememberScrollState())
                     .background(background)
             ) {
-                Spacer(Modifier.height(24.dp))
+                if (!isConnected) {
+                    Text(
+                        "Проверьте подключение к интернету",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Red),
+                        color = Color.White
+                    )
+                }
+                Spacer(Modifier.height(20.dp))
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -194,7 +215,7 @@ fun LoginScreenUi(
                     color = if (darkTheme) MutedTextDark else Color.Gray,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .padding(horizontal = 32.dp, vertical = 8.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 )
                 if (error.isNotEmpty()) { ErrorBox(error) }
                 Spacer(Modifier.height(8.dp))
@@ -211,44 +232,56 @@ fun LoginScreenUi(
                 )
                 TextButton(
                     onClick = onForgotClicked,
-                    modifier = Modifier.align(Alignment.End).padding(end = 16.dp)
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(end = 16.dp)
                 ) { Text("Забыли пароль?", color = Primary) }
                 PrimaryButton("Войти") {
                     onLoginClick(userStateModel.email, userStateModel.password)
                 }
                 OutlinedButton(
                     onClick = onGuestClick,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(56.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = BackgroundDark),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .height(56.dp)
                 ) { Text("Продолжить как Гость") }
-                Row(modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 12.dp)) {
+                Row(modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 12.dp)) {
                     Text("Нет аккаунта?")
                     Spacer(Modifier.width(4.dp))
                     Text(
                         "Зарегистрироваться",
                         color = Primary,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable(onClick = onSignUpClick).padding(bottom = 8.dp)
+                        modifier = Modifier
+                            .clickable(onClick = onSignUpClick)
+                            .padding(bottom = 8.dp)
                     )
                 }
                 val annotatedString = buildAnnotatedString {
-                    append("By clicking continue, you agree to our ")
+                    append("Нажимая Войти, Вы принимаете ")
                     pushStringAnnotation(tag = "terms", annotation = "terms")
                     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("Terms of Service")
+                        append("Условия использования")
                     }
                     pop()
-                    append(" and ")
+                    append(" и ")
                     pushStringAnnotation(tag = "privacy", annotation = "privacy")
                     withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("Privacy Policy")
+                        append("Политика конфиденциальности")
                     }
                     pop()
                 }
 
                 ClickableText(
                     text = annotatedString,
-                    style = TextStyle(color = Color.White),
-                    modifier = Modifier.padding(top = 16.dp, bottom = 32.dp).padding(horizontal = 16.dp),
+                    style = TextStyle(color = if (darkTheme) Color(0xFF9CA3AF) else Color(0xFF4B5563)),
+                    modifier = Modifier
+                        .padding(top = 8.dp, bottom = 12.dp)
+                        .padding(horizontal = 16.dp),
                     onClick = { offset ->
                         annotatedString.getStringAnnotations(offset, offset)
                             .firstOrNull()?.let { span ->
@@ -313,17 +346,13 @@ fun PasswordField(value: String, onValueChange: (String) -> Unit, show: Boolean,
 fun PrimaryButton(text: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = Primary),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp).height(56.dp)
+        colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundLight),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 8.dp)
+            .height(56.dp)
     ) {
-        Text(text, color = BackgroundDark, fontSize = 14.sp)
+        Text(text, fontSize = 14.sp)
     }
 }
-
-val Primary = Color(0xFF2BEE6C)
-val BackgroundLight = Color(0xFFF6F8F6)
-val BackgroundDark = Color(0xFF102216)
-val InputDark = Color(0xFF193322)
-val BorderDark = Color(0xFF326744)
-val MutedTextDark = Color(0xFF92C9A4)
-val Glass = Color.White.copy(alpha = 0.03f)

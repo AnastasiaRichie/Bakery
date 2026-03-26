@@ -53,8 +53,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.bakery_tm.bakery.R
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
 import com.bakery_tm.bakery.common.CopyReceiver
 import com.bakery_tm.bakery.common.InputField
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.view_model.ForgotPasswordViewModel
 import org.koin.androidx.compose.koinViewModel
 
@@ -74,7 +77,7 @@ fun ForgotPasswordScreen(
     }
     val context = LocalContext.current
     val viewModel = koinViewModel<ForgotPasswordViewModel>()
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.email.collectAsState()
     val userNotExistsEvent by viewModel.userNotExistsEvent.collectAsState(false)
     LaunchedEffect(Unit) {
         viewModel.sendNotification.collect { pass ->

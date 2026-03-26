@@ -1,11 +1,14 @@
 package com.bakery_tm.bakery.data
 
 import com.bakery_tm.bakery.common.AuthManager
+import com.bakery_tm.bakery.data.api.EmailRequest
 import com.bakery_tm.bakery.data.api.ErrorHandler
 import com.bakery_tm.bakery.data.api.LoginRequest
 import com.bakery_tm.bakery.data.api.OrderApi
+import com.bakery_tm.bakery.data.api.UpdateUserPassRequest
 import com.bakery_tm.bakery.data.api.UpdateUserRequest
 import com.bakery_tm.bakery.data.api.UserApi
+import com.bakery_tm.bakery.data.api.UserResponse
 import com.bakery_tm.bakery.data.database.UserDao
 import com.bakery_tm.bakery.data.database.entity.UserEntity
 import com.bakery_tm.bakery.data.database.entity.toEntity
@@ -24,6 +27,14 @@ class UserRepositoryImpl(
 ): UserRepository {
 
     override fun getUser(): Flow<UserEntity?> = userDao.getUser()
+
+    override suspend fun getUserByEmail(email: String): UserResponse? {
+        return try {
+            loginApi.getUserByEmail(EmailRequest(email))
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     override suspend fun insertUser(user: UserEntity) {
         userDao.insertUser(user)
@@ -61,6 +72,14 @@ class UserRepositoryImpl(
             name?.let { userDao.updateUserName(it) }
             lastName?.let { userDao.updateUserSurname(it) }
             email?.let { userDao.updateUserEmail(it) }
+        } catch (e: HttpException) {
+            throw Exception(errorHandler.parseError(e))
+        }
+    }
+
+    override suspend fun updateUserPassword(email: String, password: String) {
+        try {
+            loginApi.updateUserPassword(UpdateUserPassRequest(email, password))
         } catch (e: HttpException) {
             throw Exception(errorHandler.parseError(e))
         }

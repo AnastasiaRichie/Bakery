@@ -64,6 +64,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.data.database.entity.CartItemEntity
 import com.bakery_tm.bakery.models.ProductModel
 import com.bakery_tm.bakery.view_model.FoodViewModel

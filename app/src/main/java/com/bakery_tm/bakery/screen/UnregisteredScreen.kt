@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
 
 @Composable
 fun UnregisteredScreenUi(modifier: Modifier, onLoginClicked: () -> Unit) {
@@ -20,24 +22,4 @@ fun UnregisteredScreenUi(modifier: Modifier, onLoginClicked: () -> Unit) {
             GuestBanner(onLoginClick = onLoginClicked)
         }
     }
-
-//    Column(
-//        modifier = modifier.fillMaxSize(),
-//        verticalArrangement = Arrangement.Center,
-//        horizontalAlignment = Alignment.CenterHorizontally
-//    ) {
-//
-//        Image(
-//            imageVector = Icons.Default.AccountBox,
-//            modifier = Modifier.width(192.dp).height(192.dp),
-//            contentDescription = null
-//        )
-//        Spacer(modifier = Modifier.height(36.dp))
-//        Text(
-//            modifier = Modifier.padding(horizontal = 20.dp),
-//            text = "Войдите или зарегистрируйтесь для заказа товаров",
-//            fontSize = 20.sp,
-//            textAlign = TextAlign.Center
-//        )
-//    }
 }

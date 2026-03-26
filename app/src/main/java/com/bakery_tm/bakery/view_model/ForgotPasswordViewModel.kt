@@ -1,5 +1,6 @@
 package com.bakery_tm.bakery.view_model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bakery_tm.bakery.data.database.entity.toModel
@@ -15,8 +16,8 @@ class ForgotPasswordViewModel(
     private val userRepository: UserRepository
 ): ViewModel() {
 
-    private val _state = MutableStateFlow("")
-    val state: StateFlow<String> = _state
+    private val _email = MutableStateFlow("")
+    val email: StateFlow<String> = _email
 
     private val _userNotExistsEvent = MutableSharedFlow<Boolean>()
     val userNotExistsEvent: SharedFlow<Boolean> = _userNotExistsEvent
@@ -25,23 +26,23 @@ class ForgotPasswordViewModel(
     val sendNotification: SharedFlow<String> = _sendNotification
 
     fun onEmailChanged(email: String) {
-        _state.value = email
+        _email.value = email
     }
 
     fun isEmailExists() {
         viewModelScope.launch {
-//            val user = userRepository.getUserByEmail(_state.value)
-//            if (user != null) {
-//                _userNotExistsEvent.emit(false)
-//                val newPassword = generatePassword()
-////                userRepository.updateProfileData(
-////                    model = user.toModel().copy(password = newPassword),
-////                    userId = user.userId
-////                )
-//                _sendNotification.emit(newPassword)
-//            } else {
-//                _userNotExistsEvent.emit(true)
-//            }
+            val user = userRepository.getUserByEmail(_email.value)
+            if (user != null) {
+                _userNotExistsEvent.emit(false)
+                val newPassword = generatePassword()
+                userRepository.updateUserPassword(
+                    email = _email.value,
+                    password = newPassword
+                )
+                _sendNotification.emit(newPassword)
+            } else {
+                _userNotExistsEvent.emit(true)
+            }
         }
     }
 

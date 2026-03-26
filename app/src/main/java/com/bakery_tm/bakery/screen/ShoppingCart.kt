@@ -58,6 +58,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.R
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.data.database.relations.CartItemWithProduct
 import com.bakery_tm.bakery.models.Address
 import com.bakery_tm.bakery.view_model.OrderViewModel
@@ -76,21 +79,17 @@ fun ShoppingCartScreen(
     val cartSum by viewModel.cartSum.collectAsState()
     val dark = isSystemInDarkTheme()
     val background = if (dark) BackgroundDark else BackgroundLight
-    when {
-//        !isLoggedIn -> UnregisteredScreenUi(modifier)
-//        cartItems.isEmpty() -> EmptyShoppingCartUi(modifier)
-        else -> ShoppingCartScreenUi(
-            modifier = modifier,
-            cartItems = cartItems,
-            cartSum = cartSum,
-            background = background,
-            onLoginClick = onLoginClick,
-            isLoggedIn = isLoggedIn,
-            onToFoodListNavigate = onToFoodListNavigate,
-            onDeleteClicked = { viewModel.deleteProduct(it) },
-            onCreateOrder = { address -> orderViewModel.createOrder(address) },
-        ) { add, productId -> viewModel.updateQuantity(add, productId) }
-    }
+    ShoppingCartScreenUi(
+        modifier = modifier,
+        cartItems = cartItems,
+        cartSum = cartSum,
+        background = background,
+        onLoginClick = onLoginClick,
+        isLoggedIn = isLoggedIn,
+        onToFoodListNavigate = onToFoodListNavigate,
+        onDeleteClicked = { viewModel.deleteProduct(it) },
+        onCreateOrder = { address -> orderViewModel.createOrder(address) },
+    ) { add, productId -> viewModel.updateQuantity(add, productId) }
 }
 
 val mockedAddresses = listOf(
@@ -122,7 +121,7 @@ fun ShoppingCartScreenUi(
             CartTopBar()
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(bottom = 108.dp)
+                contentPadding = PaddingValues(bottom = 116.dp)
             ) {
                 if (!isLoggedIn) { item { GuestBanner(onLoginClick) } }
                 item { AddressSelector(mockedAddresses, address) { address = it } }
@@ -496,6 +495,8 @@ fun CheckoutPanel(
     Column(
         modifier
             .fillMaxWidth()
+            .padding(8.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {

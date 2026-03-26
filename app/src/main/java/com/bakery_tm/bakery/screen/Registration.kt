@@ -46,19 +46,29 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.MutedTextDark
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.models.FieldType
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
+import com.bakery_tm.bakery.view_model.OrderViewModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
+import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 
 @Composable
 fun RegistrationScreen(
     modifier: Modifier,
     viewModel: RegistrationViewModel,
+    shoppingCartViewModel: ShoppingCartViewModel,
+    orderViewModel: OrderViewModel,
+    isConnected: Boolean,
     onLoginClick: () -> Unit,
     onSuccessClick: () -> Unit,
 ) {
@@ -72,7 +82,12 @@ fun RegistrationScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                NavigationEvent.NavigateToFood, NavigationEvent.NavigateToRegister -> onSuccessClick()
+                NavigationEvent.NavigateToFood -> {
+                    shoppingCartViewModel.getShoppingCart()
+                    orderViewModel.getOrders()
+                    onSuccessClick()
+                }
+                NavigationEvent.NavigateToRegister -> onSuccessClick()
                 is NavigationEvent.ShowError -> {
                     error = event.message
                     println("Ошибка: ${event.message}")
@@ -87,6 +102,7 @@ fun RegistrationScreen(
         userStateModel = state,
         error = error,
         background = background,
+        isConnected = isConnected,
         dark = dark,
         onRegisterClick = viewModel::onRegisterClick,
         onTermsClick = {
@@ -118,6 +134,7 @@ fun RegistrationScreenUi(
     userStateModel: UserStateModel,
     error: String,
     background: Color,
+    isConnected: Boolean,
     dark: Boolean,
     onRegisterClick: (UserStateModel) -> Unit,
     onTermsClick: () -> Unit,
@@ -131,13 +148,19 @@ fun RegistrationScreenUi(
     showPassword: Boolean,
     onShowChanged: (Boolean) -> Unit,
 ) {
-    val nameFocusRequester = remember { FocusRequester() }
-    val surnameFocusRequester = remember { FocusRequester() }
-    val emailFocusRequester = remember { FocusRequester() }
-    val passwordFocusRequester = remember { FocusRequester() }
 
     Box(modifier = modifier.fillMaxSize().background(background)) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            if (!isConnected) {
+                Text(
+                    "Проверьте подключение к интернету",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Red),
+                    color = Color.White
+                )
+            }
             Text(
                 "Присоединиться к Комьюнити",
                 style = MaterialTheme.typography.headlineMedium,
@@ -159,12 +182,18 @@ fun RegistrationScreenUi(
                 label = "Почта",
                 value = userStateModel.email,
                 onValueChange = { onEmailChanged(it) },
-                isError = error.isNotEmpty()
+            )
+
+            PasswordField(
+                value = userStateModel.password,
+                onValueChange = { onPasswordChanged(it) },
+                show = showPassword,
+                onToggle = { onShowChanged(!showPassword) }
             )
 
             if (error.isNotEmpty()) {
                 Row(
-                    modifier = Modifier.padding(start = 20.dp, bottom = 4.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -174,7 +203,7 @@ fun RegistrationScreenUi(
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(Modifier.width(4.dp))
-                    Text(text = "$error. ", color = Color.Red, fontSize = 12.sp)
+                    Text(text = "$error. ", color = Color.Red, fontSize = 12.sp, modifier = Modifier.weight(1f))
                     Text(
                         "Войти?",
                         color = Primary,
@@ -185,38 +214,25 @@ fun RegistrationScreenUi(
                 }
             }
 
-            PasswordField(
-                value = userStateModel.password,
-                onValueChange = { onPasswordChanged(it) },
-                show = showPassword,
-                onToggle = { onShowChanged(!showPassword) }
-            )
-
             Button(
                 onClick = { onRegisterClick(userStateModel) },
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary)
             ) {
-                Text("Зарегистрироваться", color = BackgroundDark, fontSize = 18.sp)
+                Text("Зарегистрироваться", color = BackgroundLight, fontSize = 18.sp)
             }
 
             val annotatedString = buildAnnotatedString {
-                append("By clicking continue, you agree to our ")
-
+                append("Нажимая Зарегистрироваться, Вы принимаете ")
                 pushStringAnnotation(tag = "terms", annotation = "terms")
                 withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                    append("Terms of Service")
+                    append("Условия использования")
                 }
                 pop()
-
-                append(" and ")
-
-                pushStringAnnotation(
-                    tag = "privacy",
-                    annotation = "privacy"
-                )
+                append(" и ")
+                pushStringAnnotation(tag = "privacy", annotation = "privacy")
                 withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                    append("Privacy Policy")
+                    append("Политика конфиденциальности")
                 }
                 pop()
             }
@@ -282,21 +298,21 @@ fun RegistrationScreenUi(
     }
 }
 
-@Composable
-fun InputField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    isError: Boolean = false
-) {
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-        Text(label, fontWeight = FontWeight.SemiBold)
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            isError = isError,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        )
-    }
-}
+//@Composable
+//fun InputField(
+//    label: String,
+//    value: String,
+//    onValueChange: (String) -> Unit,
+//    isError: Boolean = false
+//) {
+//    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+//        Text(label, fontWeight = FontWeight.SemiBold)
+//        OutlinedTextField(
+//            value = value,
+//            onValueChange = onValueChange,
+//            isError = isError,
+//            modifier = Modifier.fillMaxWidth(),
+//            shape = RoundedCornerShape(12.dp)
+//        )
+//    }
+//}

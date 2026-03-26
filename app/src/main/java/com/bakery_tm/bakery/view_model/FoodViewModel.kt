@@ -1,5 +1,6 @@
 package com.bakery_tm.bakery.view_model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bakery_tm.bakery.common.mapper.toModel
@@ -8,6 +9,7 @@ import com.bakery_tm.bakery.models.ProductModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 class FoodViewModel(
@@ -22,7 +24,14 @@ class FoodViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            foodRepository.getProducts().collect { _state.emit(it.map { it.toModel() }) }
+            foodRepository
+                .getProducts()
+                .catch {
+                    Log.e("qwe", "catch e: " + it )
+                }
+                .collect {
+                    _state.emit(it.map { it.toModel() })
+                }
         }
     }
 

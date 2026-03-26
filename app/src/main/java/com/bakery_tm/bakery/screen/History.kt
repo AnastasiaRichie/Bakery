@@ -40,6 +40,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.R
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.InputDark
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.common.dateFormatter
 import com.bakery_tm.bakery.data.database.relations.OrderWithItems
 import com.bakery_tm.bakery.domain.OrderResponse
@@ -221,7 +225,7 @@ fun OrderCard(order: Pair<OrderResponse, Double>, index: Int, reorder: (Long) ->
                     letterSpacing = 1.sp
                 )
                 Text(
-                    "${order.second} BYN",
+                    "${"%.2f".format(order.second)} BYN",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )

@@ -11,9 +11,14 @@ interface UserApi {
     @POST("login")
     suspend fun login(@Body request: LoginRequest): UserResponse
 
+    @POST("get-user-by-email")
+    suspend fun getUserByEmail(@Body request: EmailRequest): UserResponse
 
+    @PATCH("update-user-pass")
+    suspend fun updateUserPassword(@Body request: UpdateUserPassRequest)
 }
 data class LoginRequest(val email: String, val password: String)
+data class EmailRequest(val email: String)
 data class RegisterRequest(
     val name: String,
     val lastName: String? = null,
@@ -35,4 +40,9 @@ data class UpdateUserRequest(
     val lastName: String? = null,
     val email: String? = null,
     val password: String? = null
+)
+
+data class UpdateUserPassRequest(
+    val email: String,
+    val password: String
 )
