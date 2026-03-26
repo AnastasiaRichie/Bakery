@@ -1,8 +1,10 @@
 package com.bakery_tm.bakery
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -32,8 +34,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.bakery_tm.bakery.common.BorderDark
 import com.bakery_tm.bakery.domain.AuthState
-import com.bakery_tm.bakery.screen.EditScreen
+import com.bakery_tm.bakery.screen.EditProfileScreen
 import com.bakery_tm.bakery.screen.FoodDetailsScreen
 import com.bakery_tm.bakery.screen.FoodScreen
 import com.bakery_tm.bakery.screen.ForgotPasswordScreen
@@ -62,6 +65,7 @@ fun AppNavigation(
 ) {
     val navController = rememberNavController()
     val authState by userViewModel.authState.collectAsState(AuthState.Loading)
+    val darkTheme = isSystemInDarkTheme()
     val context = LocalContext.current
     if (authState == AuthState.Loading) {
         SplashScreen()
@@ -75,6 +79,7 @@ fun AppNavigation(
                     LoginScreen(
                         modifier = Modifier.padding(innerPadding),
                         isConnected = isConnected,
+                        darkTheme = darkTheme,
                         viewModel = registrationViewModel,
                         orderViewModel = orderViewModel,
                         shoppingCartViewModel = shoppingCartViewModel,
@@ -92,6 +97,7 @@ fun AppNavigation(
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     RegistrationScreen(
                         modifier = Modifier.padding(innerPadding),
+                        darkTheme = darkTheme,
                         viewModel = registrationViewModel,
                         orderViewModel = orderViewModel,
                         shoppingCartViewModel = shoppingCartViewModel,
@@ -107,7 +113,8 @@ fun AppNavigation(
             composable(FORGOT_PASS) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     ForgotPasswordScreen(
-                        Modifier.padding(innerPadding)
+                        darkTheme = darkTheme,
+                        modifier = Modifier.padding(innerPadding)
                     ) {
                         navController.popBackStack()
                     }
@@ -127,12 +134,12 @@ fun AppNavigation(
                     bottomBar = {
                         TabRow(
                             selectedTabIndex = selectedTabIndex,
-                            containerColor = Color.White,
-                            contentColor = Color.White,
                             modifier = Modifier
+                                .padding(4.dp)
                                 .windowInsetsPadding(WindowInsets.navigationBars)
-                                .clip(
-                                    RoundedCornerShape(
+                                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                                .border(
+                                    1.dp, BorderDark, RoundedCornerShape(
                                         topStart = 16.dp,
                                         topEnd = 16.dp
                                     )
@@ -149,8 +156,12 @@ fun AppNavigation(
                                                 .padding(4.dp),
                                             contentDescription = null,
                                             colorFilter = ColorFilter.tint(
-                                                if (selectedTabIndex == index) Color.Black
-                                                else Color.Gray
+                                                when {
+                                                    darkTheme && selectedTabIndex == index -> Color.White
+                                                    !darkTheme && selectedTabIndex == index -> Color.Black
+                                                    darkTheme && selectedTabIndex != index -> Color.LightGray.copy(alpha = 0.5f)
+                                                    else -> Color.Gray
+                                                }
                                             )
                                         )
                                     },
@@ -170,6 +181,7 @@ fun AppNavigation(
                             userViewModel = userViewModel,
                             shoppingCartViewModel = shoppingCartViewModel,
                             isLoggedIn = authState == AuthState.Authenticated,
+                            darkTheme = darkTheme,
                             onFoodClicked = { navController.navigate(foodDetails(it)) },
                             onCartClicked = { selectedTabIndex = 1 },
                             onRegisterClicked = { navController.navigate(REGISTRATION) }
@@ -177,6 +189,7 @@ fun AppNavigation(
                         1 -> ShoppingCartScreen(
                             viewModel = shoppingCartViewModel,
                             orderViewModel = orderViewModel,
+                            darkTheme = darkTheme,
                             isLoggedIn = authState == AuthState.Authenticated,
                             modifier = Modifier.padding(innerPadding),
                             onToFoodListNavigate = { selectedTabIndex = 0 }
@@ -184,6 +197,7 @@ fun AppNavigation(
                         2 -> HistoryScreen(
                             modifier = Modifier.padding(innerPadding),
                             viewModel = orderViewModel,
+                            darkTheme = darkTheme,
                             isLoggedIn = authState == AuthState.Authenticated,
                             onStartOrderingClicked = { selectedTabIndex = 0 },
                             onLoginClicked = { navController.navigate(LOGIN) },
@@ -194,6 +208,7 @@ fun AppNavigation(
                             viewModel = userViewModel,
                             orderViewModel = orderViewModel,
                             shoppingCartViewModel = shoppingCartViewModel,
+                            darkTheme = darkTheme,
                             modifier = Modifier.padding(innerPadding),
                             onLogOutClicked = {
                                 navController.navigate(LOGIN) {
@@ -219,6 +234,7 @@ fun AppNavigation(
                             shoppingCartViewModel = shoppingCartViewModel,
                             isLoggedIn = authState == AuthState.Authenticated,
                             modifier = Modifier.padding(innerPadding),
+                            darkTheme = darkTheme,
                             productId = productId
                         ) { navController.popBackStack() }
                     }
@@ -228,8 +244,9 @@ fun AppNavigation(
             }
             composable(EDIT) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    EditScreen(
+                    EditProfileScreen(
                         viewModel = userViewModel,
+                        darkTheme = darkTheme,
                         modifier = Modifier.padding(innerPadding),
                         onBackClicked = { navController.popBackStack() }
                     )
@@ -250,6 +267,7 @@ fun AppNavigation(
                             orderViewModel,
                             modifier = Modifier.padding(innerPadding),
                             orderId = it,
+                            darkTheme = darkTheme,
                             index = index ?: 0,
                             onBackClicked = { navController.popBackStack() }
                         )

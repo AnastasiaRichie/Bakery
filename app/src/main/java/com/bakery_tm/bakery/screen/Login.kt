@@ -3,7 +3,6 @@ package com.bakery_tm.bakery.screen
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,6 +72,7 @@ import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 fun LoginScreen(
     modifier: Modifier,
     isConnected: Boolean,
+    darkTheme: Boolean,
     viewModel: RegistrationViewModel,
     shoppingCartViewModel: ShoppingCartViewModel,
     orderViewModel: OrderViewModel,
@@ -80,7 +80,6 @@ fun LoginScreen(
     onSignUpClick: () -> Unit,
     onForgotClicked: () -> Unit,
 ) {
-    val darkTheme = isSystemInDarkTheme()
     val background = if (darkTheme) BackgroundDark else BackgroundLight
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
@@ -198,7 +197,7 @@ fun LoginScreenUi(
                         .align(Alignment.CenterHorizontally),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(painterResource(R.drawable.cafe), null, tint = BackgroundDark, modifier = Modifier.size(40.dp))
+                    Icon(painterResource(R.drawable.cafe), null, tint = BackgroundDark.copy(alpha = 0.8f), modifier = Modifier.size(40.dp))
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(
@@ -220,7 +219,7 @@ fun LoginScreenUi(
                 if (error.isNotEmpty()) { ErrorBox(error) }
                 Spacer(Modifier.height(8.dp))
                 InputField(
-                    label = "Email",
+                    label = "Почта",
                     value = userStateModel.email,
                     onValueChange = { onEmailChanged(it) }
                 )
@@ -241,7 +240,7 @@ fun LoginScreenUi(
                 }
                 OutlinedButton(
                     onClick = onGuestClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = BackgroundDark),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = if (darkTheme) BackgroundLight else BackgroundDark),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)

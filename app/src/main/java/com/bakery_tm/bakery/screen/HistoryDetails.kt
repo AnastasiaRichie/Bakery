@@ -3,7 +3,6 @@ package com.bakery_tm.bakery.screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,10 +50,9 @@ import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.common.BackgroundDark
 import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.BorderDark
 import com.bakery_tm.bakery.common.Glass
 import com.bakery_tm.bakery.common.Primary
-import com.bakery_tm.bakery.data.database.relations.OrderItemWithProduct
-import com.bakery_tm.bakery.data.database.relations.OrderWithItems
 import com.bakery_tm.bakery.domain.OrderResponse
 import com.bakery_tm.bakery.domain.OrderResponseItem
 import com.bakery_tm.bakery.domain.OrderState
@@ -65,6 +63,7 @@ import com.bakery_tm.bakery.view_model.OrderViewModel
 fun HistoryDetailsScreen(
     viewModel: OrderViewModel,
     modifier: Modifier,
+    darkTheme: Boolean,
     orderId: Long,
     index: Int,
     onBackClicked: () -> Unit
@@ -83,6 +82,7 @@ fun HistoryDetailsScreen(
             HistoryDetailsUi(
                 modifier,
                 it,
+                darkTheme,
                 index,
                 { viewModel.reorder(it.orderId) },
                 onBackClicked,
@@ -96,25 +96,23 @@ fun HistoryDetailsScreen(
 fun HistoryDetailsUi(
     modifier: Modifier,
     order: OrderResponse,
+    darkTheme: Boolean,
     index: Int,
     onReorderClicked: () -> Unit,
     onBackClicked: () -> Unit,
 ) {
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
     Column(modifier = modifier.fillMaxSize().background(background)) {
-        OrderDetailsTopBar(index, onBackClicked, order.orderState)
-        LazyColumn(modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .weight(1f)) {
+        OrderDetailsTopBar(index, onBackClicked, order.orderState, darkTheme)
+        LazyColumn(modifier = Modifier.padding(horizontal = 16.dp).weight(1f)) {
             item {
                 Column {
                     Spacer(Modifier.height(12.dp))
-                    OrderItems(order.items)
+                    OrderItems(order.items, darkTheme)
                     Spacer(Modifier.height(12.dp))
-                    PaymentSummary(order)
+                    PaymentSummary(order, darkTheme)
                     Spacer(Modifier.height(12.dp))
-                    PickupLocation(order.address)
+                    PickupLocation(order.address, darkTheme)
                     Spacer(Modifier.height(12.dp))
                 }
             }
@@ -124,27 +122,30 @@ fun HistoryDetailsUi(
 }
 
 @Composable
-fun OrderDetailsTopBar(index: Int, onBackClicked: () -> Unit, orderState: OrderState) {
+fun OrderDetailsTopBar(index: Int, onBackClicked: () -> Unit, orderState: OrderState, darkTheme: Boolean) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(BackgroundDark.copy(alpha = 0.9f)).padding(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (darkTheme) BackgroundDark.copy(alpha = 0.9f) else BackgroundLight)
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onBackClicked) {
-            Icon(Icons.Default.ArrowBack, contentDescription = null, tint = Color.White)
+            Icon(Icons.Default.ArrowBack, contentDescription = null, tint = if (darkTheme) Color.White else Color.Black)
         }
         Spacer(Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 "ДЕТАЛИ ЗАКАЗА",
                 fontSize = 12.sp,
-                color = Color.White.copy(alpha = 0.6f),
+                color = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f),
                 fontWeight = FontWeight.Bold
             )
             Text(
                 "#${index + 1}",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color.White
+                color = if (darkTheme) Color.White else Color.Black
             )
         }
         Text(
@@ -161,7 +162,7 @@ fun OrderDetailsTopBar(index: Int, onBackClicked: () -> Unit, orderState: OrderS
 }
 
 @Composable
-fun OrderItemRow(title: String, subtitle: String, price: String, foodImageName: String) {
+fun OrderItemRow(title: String, subtitle: String, price: String, foodImageName: String, darkTheme: Boolean) {
     val context = LocalContext.current
     val foodIconRes = remember(foodImageName) {
         context.resources.getIdentifier(foodImageName, "drawable", context.packageName)
@@ -198,44 +199,33 @@ fun OrderItemRow(title: String, subtitle: String, price: String, foodImageName: 
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(subtitle, fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
+            Text(title, fontWeight = FontWeight.Bold, color = if (darkTheme) Color.White else Color.Black)
+            Text(subtitle, fontSize = 12.sp, color = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f))
         }
-
-        Text(price, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(price, fontWeight = FontWeight.Bold, color = if (darkTheme) Color.White else Color.Black)
     }
 }
 
 @Composable
-fun PaymentSummary(order: OrderResponse) {
+fun PaymentSummary(order: OrderResponse, darkTheme: Boolean) {
     val orderSum = order.items.sumOf { it.product.price.replace(" BYN", "").toDouble() * it.quantity }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionTitle("Сумма оплаты", painterResource(R.drawable.receipt_long),)
-        GlassCard {
+        SectionTitle(darkTheme, "Сумма оплаты", painterResource(R.drawable.receipt_long))
+        GlassCard(darkTheme) {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    "Итоговая стоимость",
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.6f),
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "${"%.2f".format(orderSum)} BYN",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Primary
-                )
+                Text("Итоговая стоимость", fontSize = 12.sp, color = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f), fontWeight = FontWeight.Bold)
+                Text("${"%.2f".format(orderSum)} BYN", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Primary)
             }
         }
     }
 }
 
 @Composable
-fun PickupLocation(orderAddress: Address) {
+fun PickupLocation(orderAddress: Address, darkTheme: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -244,25 +234,25 @@ fun PickupLocation(orderAddress: Address) {
             Icon(
                 Icons.Default.LocationOn,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.6f),
+                tint = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f),
                 modifier = Modifier.size(18.dp)
             )
             Text(
                 "Адрес получения",
-                color = Color.White.copy(alpha = 0.6f),
+                color = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )
         }
-        GlassCard {
+        GlassCard(darkTheme) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.LocationOn, null, tint = Primary)
                 }
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text(orderAddress.city, fontWeight = FontWeight.Bold, color = Color.White)
-                    Text(orderAddress.address, fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
+                    Text(orderAddress.city, fontWeight = FontWeight.Bold, color = if (darkTheme) Color.White else Color.Black)
+                    Text(orderAddress.address, fontSize = 12.sp, color = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f))
                 }
             }
         }
@@ -270,12 +260,12 @@ fun PickupLocation(orderAddress: Address) {
 }
 
 @Composable
-fun GlassCard(content: @Composable ColumnScope.() -> Unit) {
+fun GlassCard(darkTheme: Boolean, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Glass, RoundedCornerShape(16.dp))
-            .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(16.dp))
+            .background(if (darkTheme) Glass else BackgroundLight, RoundedCornerShape(16.dp))
+            .border(1.dp, if (darkTheme) Color.White.copy(alpha = 0.05f) else BorderDark, RoundedCornerShape(16.dp))
             .padding(16.dp),
         content = content
     )
@@ -286,7 +276,7 @@ fun ReorderButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(BackgroundDark, Color.Transparent)))
+            .background(Brush.verticalGradient(listOf(Color.Transparent, Primary.copy(alpha = 0.4f))))
             .padding(16.dp)
     ) {
         Button(
@@ -294,7 +284,7 @@ fun ReorderButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundDark),
+            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundLight),
             shape = RoundedCornerShape(16.dp)
         ) {
             Icon(Icons.Default.Refresh, null)
@@ -306,6 +296,7 @@ fun ReorderButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
 
 @Composable
 fun SectionTitle(
+    darkTheme: Boolean,
     title: String,
     icon: Painter
 ) {
@@ -316,12 +307,12 @@ fun SectionTitle(
         Icon(
             icon,
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.6f),
+            tint = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f),
             modifier = Modifier.size(18.dp)
         )
         Text(
             title,
-            color = Color.White.copy(alpha = 0.6f),
+            color = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f),
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold
         )
@@ -347,7 +338,7 @@ fun TransactionDate() {
 }
 
 @Composable
-fun OrderItems(orderItems: List<OrderResponseItem>) {
+fun OrderItems(orderItems: List<OrderResponseItem>, darkTheme: Boolean) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -355,24 +346,25 @@ fun OrderItems(orderItems: List<OrderResponseItem>) {
         Icon(
             Icons.Default.ShoppingCart,
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.6f),
+            tint = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f),
             modifier = Modifier.size(18.dp)
         )
         Text(
-            "Order Items",
-            color = Color.White.copy(alpha = 0.6f),
+            "Заказ",
+            color = if (darkTheme) Color.White.copy(alpha = 0.6f) else Color.Black.copy(alpha = 0.6f),
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold
         )
     }
     Spacer(Modifier.height(12.dp))
-    GlassCard {
+    GlassCard(darkTheme) {
         orderItems.forEachIndexed { index, item ->
             OrderItemRow(
                 item.product.name,
                 "Кол-во: ${item.quantity}",
                 item.product.price,
-                item.product.productImageName
+                item.product.productImageName,
+                darkTheme
             )
             if (index != orderItems.size - 1) {
                 HorizontalDivider(color = Color.White.copy(alpha = 0.05f))

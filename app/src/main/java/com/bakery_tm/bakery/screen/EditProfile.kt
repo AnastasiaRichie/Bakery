@@ -1,6 +1,5 @@
 package com.bakery_tm.bakery.screen
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,18 +44,20 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bakery_tm.bakery.common.BackgroundDark
 import com.bakery_tm.bakery.common.BackgroundLight
-import com.bakery_tm.bakery.common.BorderDark
 import com.bakery_tm.bakery.common.InputDark
+import com.bakery_tm.bakery.common.MutedTextDark
 import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.view_model.UserViewModel
 
 @Composable
-fun EditScreen(
+fun EditProfileScreen(
     viewModel: UserViewModel,
     modifier: Modifier,
+    darkTheme: Boolean,
     onBackClicked: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
@@ -70,9 +71,10 @@ fun EditScreen(
         }
     }
     state.userStateModel?.let { data ->
-        EditProfileScreen(
+        EditProfileScreenUi(
             modifier = modifier,
             data = data,
+            darkTheme = darkTheme,
             avatar = avatar,
             onAvatarSelected = { selectedAvatar -> viewModel.selectAvatar(selectedAvatar) },
             onBack = onBackClicked,
@@ -84,9 +86,10 @@ fun EditScreen(
 }
 
 @Composable
-fun EditProfileScreen(
+fun EditProfileScreenUi(
     modifier: Modifier,
     data: UserStateModel,
+    darkTheme: Boolean,
     avatar: ProfileAvatar,
     onAvatarSelected: (ProfileAvatar) -> Unit,
     onBack: () -> Unit,
@@ -99,14 +102,14 @@ fun EditProfileScreen(
     var model by remember { mutableStateOf(data) }
 
     Column(
-        modifier = modifier.fillMaxSize().background(InputDark)
+        modifier = modifier.fillMaxSize().background(if (darkTheme) InputDark else MutedTextDark.copy(alpha = 0.1f))
     ) {
         Row(
             modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, null, tint = Color.White)
+                Icon(Icons.Default.ArrowBack, null, tint = if (darkTheme) Color.White else BackgroundDark)
             }
             Spacer(Modifier.weight(1f))
             Text("Редактировать профиль", style = MaterialTheme.typography.titleLarge)
@@ -160,11 +163,11 @@ fun EditProfileScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Сохранить", color = InputDark, fontWeight = FontWeight.Bold)
+                Text("Сохранить", color = BackgroundLight, fontWeight = FontWeight.Bold)
             }
 
             TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-                Text("Отменить", color = Color.White.copy(0.6f))
+                Text("Отменить", color = if (darkTheme) Color.White else BackgroundDark)
             }
         }
     }
@@ -184,17 +187,6 @@ fun FloatingField(
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Primary,
-            unfocusedBorderColor = BorderDark,
-            focusedContainerColor = InputDark,
-            unfocusedContainerColor = InputDark,
-            focusedLabelColor = BackgroundLight,
-            unfocusedLabelColor = Color.White.copy(0.6f),
-            cursorColor = BackgroundLight,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White
-        ),
         supportingText = {
             if (isPassword) {
                 Text("Для сохранения пароля оставьте поле пустым", color = Color.Gray, fontSize = 10.sp)

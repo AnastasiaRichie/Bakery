@@ -3,15 +3,13 @@ package com.bakery_tm.bakery.screen
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,6 +31,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -57,9 +55,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bakery_tm.bakery.R
 import com.bakery_tm.bakery.common.BackgroundDark
 import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.InputDark
 import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.data.database.relations.CartItemWithProduct
 import com.bakery_tm.bakery.models.Address
@@ -70,6 +68,7 @@ import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 fun ShoppingCartScreen(
     viewModel: ShoppingCartViewModel,
     orderViewModel: OrderViewModel,
+    darkTheme: Boolean,
     isLoggedIn: Boolean,
     modifier: Modifier,
     onToFoodListNavigate: () -> Unit,
@@ -77,12 +76,12 @@ fun ShoppingCartScreen(
 ) {
     val cartItems by viewModel.cartItems.collectAsState()
     val cartSum by viewModel.cartSum.collectAsState()
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
     ShoppingCartScreenUi(
         modifier = modifier,
         cartItems = cartItems,
         cartSum = cartSum,
+        darkTheme = darkTheme,
         background = background,
         onLoginClick = onLoginClick,
         isLoggedIn = isLoggedIn,
@@ -105,6 +104,7 @@ fun ShoppingCartScreenUi(
     modifier: Modifier,
     cartItems: List<CartItemWithProduct>,
     cartSum: Double,
+    darkTheme: Boolean,
     background: Color,
     isLoggedIn: Boolean,
     onLoginClick: () -> Unit,
@@ -121,7 +121,7 @@ fun ShoppingCartScreenUi(
             CartTopBar()
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(bottom = 116.dp)
+                contentPadding = PaddingValues(bottom = 124.dp)
             ) {
                 if (!isLoggedIn) { item { GuestBanner(onLoginClick) } }
                 item { AddressSelector(mockedAddresses, address) { address = it } }
@@ -130,90 +130,22 @@ fun ShoppingCartScreenUi(
                     item { EmptyState(onToFoodListNavigate) }
                 } else {
                     //TODO (divider)
-                    items(cartItems) { item -> CartItemRow(item, onQuantityChanged, onDeleteClicked) }
+                    itemsIndexed(cartItems) { index, item ->
+                        CartItemRow(item, onQuantityChanged, onDeleteClicked)
+                        if (index != (cartItems.size - 1)) {
+                            HorizontalDivider(Modifier.weight(1f).padding(horizontal = 16.dp))
+                        }
+                    }
                 }
             }
         }
         CheckoutPanel(
             total = cartSum,
+            darkTheme = darkTheme,
             enabled = cartItems.isNotEmpty(),
             modifier = Modifier.align(Alignment.BottomCenter),
             onCreateOrder = { onCreateOrder(address) }
         )
-    }
-}
-
-@Composable
-fun AddFoodItem(
-    item: CartItemWithProduct,
-    onDeleteClicked: (Long) -> Unit,
-    onQuantityChanged: (Boolean, Long) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .padding(vertical = 8.dp)
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Image(
-            modifier = Modifier.size(48.dp),
-            painter = painterResource(R.drawable.ic_ice_cream),
-            contentDescription = null
-        )
-        Column(modifier = Modifier
-            .fillMaxHeight()
-            .padding(8.dp)
-            .weight(9f)) {
-            Text(
-                text = item.product.name,
-                color = Color.LightGray,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                fontSize = 16.sp
-            )
-            Text(
-                text = item.product.description,
-                color = Color.DarkGray,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                fontSize = 12.sp
-            )
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        CounterWithTextButtons(
-            modifier = Modifier.padding(4.dp),
-            initialValue = item.item.quantity,
-            onValueChanged = { onQuantityChanged(it, item.product.productId) })
-        Image(
-            modifier = Modifier
-                .width(36.dp)
-                .height(36.dp)
-                .padding(4.dp)
-                .clickable { onDeleteClicked(item.item.cartItemId) },
-            colorFilter = ColorFilter.tint(Color.White),
-            painter = painterResource(R.drawable.ic_trash),
-            contentDescription = "Delete"
-        )
-    }
-}
-
-@Composable
-fun EmptyShoppingCartUi(modifier: Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-
-        Image(
-            painter = painterResource(R.drawable.ic_add_bag_basket),
-            modifier = Modifier
-                .width(192.dp)
-                .height(192.dp),
-            contentDescription = null
-        )
-        Spacer(modifier = Modifier.height(36.dp))
-        Text("Корзина пуста", fontSize = 20.sp)
     }
 }
 
@@ -325,14 +257,11 @@ fun AddressSelector(
     var query by remember { mutableStateOf("") }
 
     ExposedDropdownMenuBox(
+        modifier = Modifier.padding(horizontal = 16.dp),
         expanded = expanded,
         onExpandedChange = { expanded = !expanded }
     ) {
-        Card(
-            Modifier
-                .padding(horizontal = 16.dp)
-                .menuAnchor()
-        ) {
+        Card(Modifier.menuAnchor()) {
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -361,12 +290,16 @@ fun AddressSelector(
                     onClick = { /* ничего */ }
                 )
             } else {
-                filtered.forEach { address ->
+                filtered.forEachIndexed { index, address ->
                     DropdownMenuItem(
                         text = {
                             Column {
                                 Text(address.city, fontWeight = FontWeight.Bold)
                                 Text(address.address, style = MaterialTheme.typography.bodySmall)
+                                if (index != (filtered.size - 1)) {
+                                    Spacer(Modifier.height(4.dp))
+                                    HorizontalDivider(Modifier.weight(1f))
+                                }
                             }
                         },
                         onClick = {
@@ -478,7 +411,7 @@ fun EmptyState(onToFoodListNavigate: () -> Unit) {
         Text("Ваша корзина пустая", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Text("Похоже, что вы пока ничего не добавили.", color = Color.Gray, textAlign = TextAlign.Center)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onToFoodListNavigate, colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundDark)) {
+        Button(onClick = onToFoodListNavigate, colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundLight)) {
             Text("К покупкам!")
         }
     }
@@ -488,16 +421,16 @@ fun EmptyState(onToFoodListNavigate: () -> Unit) {
 fun CheckoutPanel(
     total: Double,
     enabled: Boolean,
+    darkTheme: Boolean,
     modifier: Modifier,
     onCreateOrder: () -> Unit
 ) {
-    //TODO(скругленные углы и рамка)
     Column(
         modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.background)
+            .background(if (darkTheme) InputDark else BackgroundLight, RoundedCornerShape(12.dp))
+            .border(1.dp, Primary.copy(alpha = 0.8f), RoundedCornerShape(12.dp))
             .padding(16.dp)
     ) {
         SummaryRow("Итого", total, highlight = true)
@@ -506,7 +439,7 @@ fun CheckoutPanel(
             onClick = onCreateOrder,
             enabled = enabled,
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundDark)
+            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundLight)
         ) {
             Text("Заказать", fontSize = 18.sp)
         }

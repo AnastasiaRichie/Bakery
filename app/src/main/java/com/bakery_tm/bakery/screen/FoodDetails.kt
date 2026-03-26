@@ -1,6 +1,5 @@
 package com.bakery_tm.bakery.screen
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
@@ -9,7 +8,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -77,6 +75,7 @@ import kotlin.random.Random
 fun FoodDetailsScreen(
     viewModel: FoodViewModel,
     shoppingCartViewModel: ShoppingCartViewModel,
+    darkTheme: Boolean,
     isLoggedIn: Boolean,
     modifier: Modifier,
     productId: Long,
@@ -87,8 +86,7 @@ fun FoodDetailsScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val isResumed =
         lifecycleOwner.lifecycle.currentStateAsState().value == Lifecycle.State.RESUMED || lifecycleOwner.lifecycle.currentStateAsState().value == Lifecycle.State.STARTED
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
     LaunchedEffect(productId) {
         shoppingCartViewModel.getCartInfoByProductId(productId)
         viewModel.initSelected(productId)
@@ -98,19 +96,17 @@ fun FoodDetailsScreen(
         shoppingCartViewModel.updateSelectedState()
         onBackClicked()
     }
-    Log.e("qwe", "FoodDetailsScreen isReady: "+ isReady)
-    Log.e("qwe", "FoodDetailsScreen selected: "+ selected)
     if (isReady) {
         selected?.let {
             FoodDetailsScreenUi(
                 modifier = modifier,
                 isActive = isResumed,
+                darkTheme = darkTheme,
                 isLoggedIn = isLoggedIn,
                 model = it,
                 background = background,
                 cartItem = state.cartItem,
                 onQuantityChanged = { add ->
-                    Log.e("qwe", "FoodDetailsScreen add: " + add)
                     shoppingCartViewModel.updateQuantity(add, it.productId)
                 },
                 onAddClicked = {
@@ -131,6 +127,7 @@ fun FoodDetailsScreen(
 fun FoodDetailsScreenUi(
     modifier: Modifier,
     isActive: Boolean,
+    darkTheme: Boolean,
     isLoggedIn: Boolean,
     model: ProductModel,
     background: Color,
@@ -165,7 +162,7 @@ fun FoodDetailsScreenUi(
                 }
                 item { NutritionSection() }
                 item { IngredientsSection(model.fullDescription) }
-                item { AllergensSection(model.allergens) }
+                item { AllergensSection(model.allergens, darkTheme) }
                 item { Spacer(Modifier.height(20.dp)) }
             }
 
@@ -182,7 +179,7 @@ fun FoodDetailsScreenUi(
                     Button(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Primary,
-                            contentColor = BackgroundDark
+                            contentColor = BackgroundLight
                         ),
                         onClick = {
                             count--
@@ -193,7 +190,7 @@ fun FoodDetailsScreenUi(
                     Button(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Primary,
-                            contentColor = BackgroundDark
+                            contentColor = BackgroundLight
                         ),
                         onClick = {
                             count++
@@ -209,7 +206,7 @@ fun FoodDetailsScreenUi(
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Primary,
-                        contentColor = BackgroundDark
+                        contentColor = BackgroundLight
                     ),
                     enabled = isActive,
                     modifier = Modifier
@@ -275,11 +272,6 @@ fun NutritionSection() {
         Text("Пищевая ценность", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-//            NutritionItem("Cals", model.calories)
-//            NutritionItem("Fat", model.fat)
-//            NutritionItem("Carbs", model.carbs)
-//            NutritionItem("Prot", model.protein)
-
             NutritionItem("Ккал", Random.nextInt(1, 11).toString())
             NutritionItem("Жиры", Random.nextInt(1, 11).toString())
             NutritionItem("Угл", Random.nextInt(1, 11).toString())
@@ -292,7 +284,6 @@ fun NutritionSection() {
 fun NutritionItem(label: String, value: String) {
     Column(
         modifier = Modifier
-            //.weight(1f)
             .background(Primary.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
             .border(1.dp, Primary.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
             .padding(12.dp),
@@ -312,7 +303,7 @@ fun IngredientsSection(text: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun AllergensSection(allergens: List<String>) {
+fun AllergensSection(allergens: List<String>, darkTheme: Boolean) {
     ExpandableSection(
         icon = Icons.Default.Warning,
         iconColor = Color.Yellow,
@@ -324,8 +315,8 @@ fun AllergensSection(allergens: List<String>) {
                     AssistChip(
                         onClick = {},
                         colors = AssistChipDefaults.assistChipColors(containerColor = Color.Yellow.copy(alpha = 0.1f)),
-                        border = BorderStroke(1.dp, Color.Yellow.copy(alpha = 0.1f)),
-                        label = { Text(it.uppercase(), color = Color.Yellow, fontSize = 12.sp) }
+                        border = BorderStroke(1.dp, if (darkTheme) Color.Yellow.copy(alpha = 0.1f) else Color.Yellow),
+                        label = { Text(it.uppercase(), color = if (darkTheme) Color.Yellow else Color.Black, fontSize = 12.sp) }
                     )
                 }
             }

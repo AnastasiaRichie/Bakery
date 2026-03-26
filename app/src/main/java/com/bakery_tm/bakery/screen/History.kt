@@ -3,7 +3,6 @@ package com.bakery_tm.bakery.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +53,7 @@ import com.bakery_tm.bakery.view_model.OrderViewModel
 fun HistoryScreen(
     modifier: Modifier,
     viewModel: OrderViewModel,
+    darkTheme: Boolean,
     isLoggedIn: Boolean,
     onLoginClicked: () -> Unit,
     onStartOrderingClicked: () -> Unit,
@@ -62,9 +62,9 @@ fun HistoryScreen(
     val orders by viewModel.orders.collectAsState()
 
     when {
-        !isLoggedIn -> UnregisteredScreenUi(modifier, onLoginClicked)
-        orders.isEmpty() -> EmptyHistoryScreenUi(modifier, onStartOrderingClicked)
-        else -> HistoryScreenUi(modifier, orders, onOrderClicked) { orderId ->
+        !isLoggedIn -> UnregisteredScreenUi(modifier, darkTheme, onLoginClicked)
+        orders.isEmpty() -> EmptyHistoryScreenUi(modifier, darkTheme, onStartOrderingClicked)
+        else -> HistoryScreenUi(modifier, darkTheme, orders, onOrderClicked) { orderId ->
             viewModel.reorder(orderId)
         }
     }
@@ -73,12 +73,12 @@ fun HistoryScreen(
 @Composable
 fun HistoryScreenUi(
     modifier: Modifier,
+    darkTheme: Boolean,
     orders: List<Pair<OrderResponse, Double>>,
     onOrderClicked: (Long, Int) -> Unit,
     reorder: (Long) -> Unit,
 ) {
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
     Box(modifier = modifier.fillMaxSize().background(background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             OrderHistoryTopBar()
@@ -88,7 +88,7 @@ fun HistoryScreenUi(
                 contentPadding = PaddingValues(bottom = 12.dp)
             ) {
                 itemsIndexed(orders) { index, order ->
-                    OrderCard(order = order, index = index, reorder = reorder, onOrderClicked = onOrderClicked)
+                    OrderCard(order = order, darkTheme = darkTheme, index = index, reorder = reorder, onOrderClicked = onOrderClicked)
                 }
             }
         }
@@ -96,19 +96,20 @@ fun HistoryScreenUi(
 }
 
 @Composable
-fun EmptyHistoryScreenUi(modifier: Modifier, onStartOrderingClicked: () -> Unit) {
-    Box(modifier = modifier.fillMaxSize().background(BackgroundDark)) {
+fun EmptyHistoryScreenUi(modifier: Modifier, darkTheme: Boolean, onStartOrderingClicked: () -> Unit) {
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
+    Box(modifier = modifier.fillMaxSize().background(background)) {
         Column(Modifier.fillMaxSize()) {
             OrderHistoryTopBar()
             Spacer(Modifier.weight(1f))
-            EmptyOrderState(onStartOrderingClicked)
+            EmptyOrderState(darkTheme, onStartOrderingClicked)
             Spacer(Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-fun EmptyOrderState(onStartOrderingClicked: () -> Unit) {
+fun EmptyOrderState(darkTheme: Boolean, onStartOrderingClicked: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(horizontal = 32.dp)
@@ -130,7 +131,7 @@ fun EmptyOrderState(onStartOrderingClicked: () -> Unit) {
                     .size(48.dp)
                     .align(Alignment.BottomEnd)
                     .offset((-12).dp, (-12).dp)
-                    .background(BackgroundDark, CircleShape),
+                    .background(if (darkTheme) BackgroundDark else BackgroundLight, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -146,7 +147,7 @@ fun EmptyOrderState(onStartOrderingClicked: () -> Unit) {
             "Заказов пока нет",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = if (darkTheme) Color.White else Color.Black
         )
         Spacer(Modifier.height(12.dp))
         Text(
@@ -158,7 +159,7 @@ fun EmptyOrderState(onStartOrderingClicked: () -> Unit) {
         Spacer(Modifier.height(32.dp))
         Button(
             onClick = onStartOrderingClicked,
-            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundDark),
+            colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundLight),
             modifier = Modifier.fillMaxWidth().padding(16.dp)
         ) { Text("Перейти к ассортименту") }
     }
@@ -177,11 +178,11 @@ fun OrderHistoryTopBar() {
 }
 
 @Composable
-fun OrderCard(order: Pair<OrderResponse, Double>, index: Int, reorder: (Long) -> Unit, onOrderClicked: (Long, Int) -> Unit) {
+fun OrderCard(order: Pair<OrderResponse, Double>, darkTheme: Boolean, index: Int, reorder: (Long) -> Unit, onOrderClicked: (Long, Int) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(InputDark, RoundedCornerShape(16.dp))
+            .background(if (darkTheme) InputDark else BackgroundLight, RoundedCornerShape(16.dp))
             .border(1.dp, Color.DarkGray, RoundedCornerShape(16.dp))
             .padding(16.dp)
             .clickable { onOrderClicked(order.first.orderId, index) }
@@ -199,16 +200,16 @@ fun OrderCard(order: Pair<OrderResponse, Double>, index: Int, reorder: (Long) ->
                     color = Color.Gray
                 )
             }
-            StatusBadge(if (order.first.orderState == OrderState.ORDERED) "Заказан" else "Получен")
+            StatusBadge(if (order.first.orderState == OrderState.ORDERED) "Заказан" else "Получен", darkTheme)
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             text = order.first.items.joinToString { "${it.quantity} x ${it.product.name}" },
             fontSize = 13.sp,
-            color = Color.LightGray,
+            color = if (darkTheme) Color.LightGray else Color.DarkGray,
             fontStyle = FontStyle.Italic
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -232,17 +233,17 @@ fun OrderCard(order: Pair<OrderResponse, Double>, index: Int, reorder: (Long) ->
             }
             Button(
                 onClick = { reorder(order.first.orderId) },
-                colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundDark),
+                colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundLight),
             ) { Text("Повторить заказ") }
         }
     }
 }
 
 @Composable
-fun StatusBadge(status: String) {
+fun StatusBadge(status: String, darkTheme: Boolean) {
     Box(
         modifier = Modifier
-            .background(BackgroundDark, CircleShape)
+            .background(if (darkTheme) BackgroundDark else BackgroundLight, CircleShape)
             .border(1.dp, Primary, CircleShape)
             .padding(horizontal = 12.dp, vertical = 4.dp)
     ) {

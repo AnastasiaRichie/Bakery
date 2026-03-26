@@ -7,7 +7,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -60,6 +59,7 @@ fun ProfileScreen(
     viewModel: UserViewModel,
     orderViewModel: OrderViewModel,
     shoppingCartViewModel: ShoppingCartViewModel,
+    darkTheme: Boolean,
     modifier: Modifier,
     onLogOutClicked: () -> Unit,
     onLogInClicked: () -> Unit,
@@ -68,6 +68,7 @@ fun ProfileScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val avatar by viewModel.selectedAvatar.collectAsState()
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -78,7 +79,6 @@ fun ProfileScreen(
         }
     }
     val model = state.userStateModel
-    Log.e("qwe", "ProfileScreen modelmodel: " + model)
     when {
         state.isLoading -> {
             LoadingScreen()
@@ -89,6 +89,8 @@ fun ProfileScreen(
                 modifier,
                 model,
                 avatar,
+                darkTheme,
+                background,
                 onEditClicked
             ) {
                 orderViewModel.onLogoutClicked()
@@ -99,6 +101,7 @@ fun ProfileScreen(
         model == null -> {
             GuestProfileScreen(
                 modifier,
+                darkTheme,
                 onLogInClicked,
                 onRegisterClicked
             )
@@ -111,21 +114,23 @@ fun ProfileScreenUi(
     modifier: Modifier,
     model: UserStateModel,
     avatar: ProfileAvatar,
+    darkTheme: Boolean,
+    background: Color,
     onEditClicked: () -> Unit,
     onLogOutClicked: () -> Unit
 ) {
     LazyColumn(modifier = modifier
         .fillMaxSize()
-        .background(BackgroundDark)) {
+        .background(background)) {
         item { ProfileHeader(model, avatar, onEditClicked) }
-        item { QrCard(model.email) }
+        item { QrCard(model.email, darkTheme) }
         item { Spacer(Modifier.height(16.dp)) }
         item {
             Spacer(Modifier.height(24.dp))
             OutlinedButton(
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary.copy(alpha = 0.1f),
-                    contentColor = Primary
+                    containerColor = Primary.copy(alpha = 0.6f),
+                    contentColor = Color.White
                 ),
                 onClick = onLogOutClicked,
                 modifier = Modifier
@@ -140,11 +145,11 @@ fun ProfileScreenUi(
 @Composable
 fun GuestProfileScreen(
     modifier: Modifier,
+    darkTheme: Boolean,
     onLogInClicked: () -> Unit,
     onRegisterClicked: () -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
 
     Box(modifier = modifier
         .fillMaxSize()
@@ -224,7 +229,7 @@ fun GuestButtons(onLogInClicked: () -> Unit, onRegisterClicked: () -> Unit) {
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Primary)
         ) {
-            Text("Войти", fontWeight = FontWeight.Bold, color = BackgroundDark)
+            Text("Войти", fontWeight = FontWeight.Bold, color = BackgroundLight)
         }
         OutlinedButton(
             onClick = onRegisterClicked,
@@ -241,6 +246,7 @@ fun GuestButtons(onLogInClicked: () -> Unit, onRegisterClicked: () -> Unit) {
 @Composable
 fun QrWithCloseDialog(
     bitmap: ImageBitmap,
+    darkTheme: Boolean,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -272,7 +278,7 @@ fun QrWithCloseDialog(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close",
-                    tint = Color.White
+                    tint = if (darkTheme) Color.White else BackgroundDark
                 )
             }
         }
@@ -291,7 +297,7 @@ private fun generateQrBitmap(content: String, size: Int = 600): Bitmap {
 }
 
 @Composable
-fun QrCard(email: String) {
+fun QrCard(email: String, darkTheme: Boolean) {
     var showQr by remember { mutableStateOf(false) }
 
     val qrContent = """
@@ -302,14 +308,14 @@ fun QrCard(email: String) {
         generateQrBitmap(qrContent)
     }
     if (showQr) {
-        QrWithCloseDialog(bitmap.asImageBitmap()) { showQr = false }
+        QrWithCloseDialog(bitmap.asImageBitmap(), darkTheme) { showQr = false }
     }
     Card(
         modifier = Modifier
             .padding(16.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = InputDark)
+        colors = CardDefaults.cardColors(containerColor = if (darkTheme) InputDark else Primary.copy(alpha = 0.85f))
     ) {
         Column(modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -317,7 +323,7 @@ fun QrCard(email: String) {
             Text("Ваш QR-код", fontWeight = FontWeight.Bold, fontSize = 20.sp)
             Text(
                 "Отсканируйте на кассе для получения заказа.",
-                color = Color.White.copy(alpha = 0.6f),
+                color = Color.White,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -334,6 +340,7 @@ fun QrCard(email: String) {
                 contentDescription = "QR Code",
                 modifier = Modifier
                     .size(96.dp)
+                    .clip(RoundedCornerShape(8.dp))
                     .align(CenterHorizontally)
                     .clickable { showQr = true },
                 contentScale = ContentScale.Fit
@@ -341,7 +348,7 @@ fun QrCard(email: String) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 "Коснитесь, чтобы открыть QR",
-                color = Color.LightGray,
+                color = Color.White,
                 fontSize = 12.sp,
                 modifier = Modifier
                     .align(CenterHorizontally)

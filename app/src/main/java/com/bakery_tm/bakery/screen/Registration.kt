@@ -3,7 +3,6 @@ package com.bakery_tm.bakery.screen
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,7 +24,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -68,12 +64,12 @@ fun RegistrationScreen(
     viewModel: RegistrationViewModel,
     shoppingCartViewModel: ShoppingCartViewModel,
     orderViewModel: OrderViewModel,
+    darkTheme: Boolean,
     isConnected: Boolean,
     onLoginClick: () -> Unit,
     onSuccessClick: () -> Unit,
 ) {
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     var error by remember { mutableStateOf("") }
@@ -103,7 +99,7 @@ fun RegistrationScreen(
         error = error,
         background = background,
         isConnected = isConnected,
-        dark = dark,
+        darkTheme = darkTheme,
         onRegisterClick = viewModel::onRegisterClick,
         onTermsClick = {
             val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -135,7 +131,7 @@ fun RegistrationScreenUi(
     error: String,
     background: Color,
     isConnected: Boolean,
-    dark: Boolean,
+    darkTheme: Boolean,
     onRegisterClick: (UserStateModel) -> Unit,
     onTermsClick: () -> Unit,
     onPrivacyClick: () -> Unit,
@@ -168,7 +164,7 @@ fun RegistrationScreenUi(
             )
             Text(
                 "Заказывайте Ваш любимый кофе и снеки за считанные секунды.",
-                color = if (dark) Color(0xFF9CA3AF) else Color(0xFF4B5563),
+                color = if (darkTheme) Color(0xFF9CA3AF) else Color(0xFF4B5563),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
@@ -240,7 +236,7 @@ fun RegistrationScreenUi(
             ClickableText(
                 text = annotatedString,
                 modifier = Modifier.padding(top = 8.dp, bottom = 12.dp).padding(horizontal = 16.dp),
-                style = TextStyle(color = if (dark) Color(0xFF9CA3AF) else Color(0xFF4B5563)),
+                style = TextStyle(color = if (darkTheme) Color(0xFF9CA3AF) else Color(0xFF4B5563)),
                 onClick = { offset ->
                     annotatedString.getStringAnnotations(offset, offset)
                         .firstOrNull()?.let { span ->
@@ -259,7 +255,7 @@ fun RegistrationScreenUi(
                 Text(
                     "Уже есть аккаунт? Войти",
                     modifier = Modifier.clickable(onClick = onLoginClick),
-                    color = if (dark) MutedTextDark else Color.Gray
+                    color = if (darkTheme) MutedTextDark else Color.Gray
                 )
 
                 Row(
