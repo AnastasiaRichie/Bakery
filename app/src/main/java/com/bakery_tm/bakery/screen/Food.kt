@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -83,6 +84,7 @@ fun FoodScreen(
     val userState by userViewModel.state.collectAsState()
     val avatar by userViewModel.selectedAvatar.collectAsState()
     val cartItems by shoppingCartViewModel.cartItems.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     FoodScreenUi(
         modifier = modifier,
@@ -91,11 +93,13 @@ fun FoodScreen(
         avatar = avatar,
         darkTheme = darkTheme,
         isLoggedIn = isLoggedIn,
+        error = error,
         user = userState.userStateModel?.name.orEmpty() + " " + userState.userStateModel?.lastName,
         onFoodClicked = onFoodClicked,
         onAddClicked = shoppingCartViewModel::addOrDeleteCartItem,
         onCartClicked = onCartClicked,
-        onRegisterClicked = onRegisterClicked
+        onRegisterClicked = onRegisterClicked,
+        onProductsUpdate = viewModel::getProducts,
     )
 }
 
@@ -107,11 +111,13 @@ fun FoodScreenUi(
     avatar: ProfileAvatar,
     darkTheme: Boolean,
     isLoggedIn: Boolean,
+    error: String?,
     user: String,
     onFoodClicked: (Long) -> Unit,
     onAddClicked: (Long) -> Unit,
     onCartClicked: () -> Unit,
     onRegisterClicked: () -> Unit,
+    onProductsUpdate: () -> Unit,
 ) {
     val background = if (darkTheme) BackgroundDark else BackgroundLight
     var selectedTab by remember { mutableIntStateOf(0) }
@@ -146,27 +152,49 @@ fun FoodScreenUi(
                     }
                 }
             }
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.heightIn(min = 400.dp),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(
-                    items = when (selectedTab) {
-                        0 -> foodList
-                        1 -> foodList.filter { it.productType == ProductType.FLOUR }
-                        2 -> foodList.filter { it.productType == ProductType.DRINK }
-                        else -> foodList
-                    }) {
-                    ProductCard(
-                        product = it,
-                        cartItems = cartItems,
-                        onProductClicked = onFoodClicked,
-                        onAddClicked = onAddClicked,
-                        isLoggedIn = isLoggedIn
-                    )
+            if (error != null) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                        .padding(top = 72.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Произошла ошибка получения данных")
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = onProductsUpdate,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary,
+                            contentColor = BackgroundLight
+                        )
+                    ) {
+                        Text("Обновить список!")
+                    }
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.heightIn(min = 400.dp),
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(
+                        items = when (selectedTab) {
+                            0 -> foodList
+                            1 -> foodList.filter { it.productType == ProductType.FLOUR }
+                            2 -> foodList.filter { it.productType == ProductType.DRINK }
+                            else -> foodList
+                        }) {
+                        ProductCard(
+                            product = it,
+                            cartItems = cartItems,
+                            onProductClicked = onFoodClicked,
+                            onAddClicked = onAddClicked,
+                            isLoggedIn = isLoggedIn
+                        )
+                    }
                 }
             }
         }

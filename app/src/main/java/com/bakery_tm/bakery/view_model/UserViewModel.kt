@@ -80,6 +80,8 @@ class UserViewModel(
             try {
                 userRepository.updateUser(name = name, lastName = lastName, email = email, password = password)
                 _events.emit(NavigationEvent.NavigateBack)
+            } catch (e: Exception) {
+                _state.update { state -> state.copy(errorMessage = e.message.orEmpty()) }
             } finally {
                 val model = userRepository.getUser().firstOrNull()?.toModel()
                 _state.update { state -> state.copy(userStateModel = model) }

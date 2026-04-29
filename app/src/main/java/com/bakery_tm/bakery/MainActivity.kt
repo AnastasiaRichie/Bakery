@@ -1,7 +1,6 @@
 package com.bakery_tm.bakery
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -34,7 +33,6 @@ class MainActivity : ComponentActivity() {
             }
             launch {
                 mainViewModel.user.collectWithLifecycle(this@MainActivity) { user ->
-                    Log.e("qwe", "onCreate user: " + user)
                     if (user != null) {
                         mainViewModel.connect(user.userId)
                     } else {

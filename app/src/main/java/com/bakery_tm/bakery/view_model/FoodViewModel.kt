@@ -1,6 +1,5 @@
 package com.bakery_tm.bakery.view_model
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bakery_tm.bakery.common.mapper.toModel
@@ -19,18 +18,31 @@ class FoodViewModel(
     private val _state = MutableStateFlow<List<ProductModel>>(emptyList())
     val state: StateFlow<List<ProductModel>> = _state
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     private val _selected = MutableStateFlow<ProductModel?>(null)
     val selected: StateFlow<ProductModel?> = _selected
 
     init {
+        getProducts()
+    }
+
+    fun getProducts() {
         viewModelScope.launch(Dispatchers.IO) {
+            _error.emit(null)
             foodRepository
                 .getProducts()
                 .catch {
-                    Log.e("qwe", "catch e: " + it )
+                    _error.emit("")
                 }
                 .collect {
-                    _state.emit(it.map { it.toModel() })
+                    if (it.isNotEmpty()) {
+                        _error.emit(null)
+                        _state.emit(it.map { it.toModel() })
+                    } else {
+                        _error.emit("")
+                    }
                 }
         }
     }

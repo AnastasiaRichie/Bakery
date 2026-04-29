@@ -15,7 +15,7 @@ class WebSocketManager(private val okHttpClient: OkHttpClient) {
 
     fun connect(userId: Int) {
         if (webSocket != null) return
-        val request = Request.Builder().url("ws://192.168.144.158:8080/api/orders/$userId").build()
+        val request = Request.Builder().url("ws://172.20.10.7:8080/api/orders/$userId").build()
         webSocket = okHttpClient.newWebSocket(
             request,
             object : WebSocketListener() {

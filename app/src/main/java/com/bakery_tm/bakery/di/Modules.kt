@@ -123,4 +123,4 @@ fun provideEncryptedPrefs(context: Context) =
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-private const val BASE_URL = "http://192.168.144.158:8080/api/"
+private const val BASE_URL = "http://172.20.10.7:8080/api/"

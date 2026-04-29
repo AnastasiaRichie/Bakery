@@ -3,7 +3,6 @@ package com.bakery_tm.bakery.view_model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bakery_tm.bakery.common.UpdateOrderListener
-import com.bakery_tm.bakery.data.api.NoAuthException
 import com.bakery_tm.bakery.data.api.WebSocketManager
 import com.bakery_tm.bakery.data.database.entity.UserEntity
 import com.bakery_tm.bakery.domain.OrderRepository
@@ -17,6 +16,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 class OrderViewModel(
     private val orderRepository: OrderRepository,
@@ -120,7 +120,7 @@ class OrderViewModel(
             orderRepository.getAllOrders(userId).collect {
                 _orders.value = it.map { it to orderRepository.calculateOrderTotal(it.orderId, it.items) }
             }
-        } catch (e: NoAuthException) {
+        } catch (e: IOException) {
             _orders.value = emptyList()
         }
     }

@@ -208,7 +208,7 @@ fun OrderItemRow(title: String, subtitle: String, price: String, foodImageName: 
 
 @Composable
 fun PaymentSummary(order: OrderResponse, darkTheme: Boolean) {
-    val orderSum = order.items.sumOf { it.product.price.replace(" BYN", "").toDouble() * it.quantity }
+    val orderSum = order.items.sumOf { it.product.price.replace(" BYN", "").replace(",", ".").toDouble() * it.quantity }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionTitle(darkTheme, "Сумма оплаты", painterResource(R.drawable.receipt_long))
         GlassCard(darkTheme) {

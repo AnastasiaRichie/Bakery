@@ -17,6 +17,7 @@ import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.models.toApi
 import kotlinx.coroutines.flow.Flow
 import retrofit2.HttpException
+import java.io.IOException
 
 class UserRepositoryImpl(
     private val loginApi: UserApi,
@@ -74,6 +75,8 @@ class UserRepositoryImpl(
             email?.let { userDao.updateUserEmail(it) }
         } catch (e: HttpException) {
             throw Exception(errorHandler.parseError(e))
+        } catch (e: IOException) {
+            throw Exception("Произошла ошибка, повторите попытку позже!")
         }
     }
 

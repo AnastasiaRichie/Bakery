@@ -76,6 +76,7 @@ fun EditProfileScreen(
             data = data,
             darkTheme = darkTheme,
             avatar = avatar,
+            errorMessage = state.errorMessage,
             onAvatarSelected = { selectedAvatar -> viewModel.selectAvatar(selectedAvatar) },
             onBack = onBackClicked,
             onSave = { name, lastName, email, password ->
@@ -91,6 +92,7 @@ fun EditProfileScreenUi(
     data: UserStateModel,
     darkTheme: Boolean,
     avatar: ProfileAvatar,
+    errorMessage: String,
     onAvatarSelected: (ProfileAvatar) -> Unit,
     onBack: () -> Unit,
     onSave: (String?, String?, String?, String?) -> Unit,
@@ -150,6 +152,9 @@ fun EditProfileScreenUi(
             modifier = Modifier.padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            if (errorMessage.isNotEmpty()) {
+                Text(errorMessage, color = Color.Red, fontSize = 14.sp)
+            }
             Button(
                 onClick = {
                     onSave(
