@@ -36,6 +36,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.bakery_tm.bakery.common.BorderDark
 import com.bakery_tm.bakery.domain.AuthState
+import com.bakery_tm.bakery.models.UserType
+import com.bakery_tm.bakery.screen.AdminFoodEditorScreen
 import com.bakery_tm.bakery.screen.EditProfileScreen
 import com.bakery_tm.bakery.screen.FoodDetailsScreen
 import com.bakery_tm.bakery.screen.FoodScreen
@@ -44,11 +46,13 @@ import com.bakery_tm.bakery.screen.HistoryDetailsScreen
 import com.bakery_tm.bakery.screen.HistoryScreen
 import com.bakery_tm.bakery.screen.LoginScreen
 import com.bakery_tm.bakery.screen.ProfileScreen
+import com.bakery_tm.bakery.screen.QrScannerScreen
 import com.bakery_tm.bakery.screen.RegistrationScreen
 import com.bakery_tm.bakery.screen.ShoppingCartScreen
 import com.bakery_tm.bakery.screen.SplashScreen
 import com.bakery_tm.bakery.view_model.FoodViewModel
 import com.bakery_tm.bakery.view_model.OrderViewModel
+import com.bakery_tm.bakery.view_model.OrdersViewModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
@@ -61,10 +65,13 @@ fun AppNavigation(
     foodViewModel: FoodViewModel = koinViewModel(),
     shoppingCartViewModel: ShoppingCartViewModel = koinViewModel(),
     orderViewModel: OrderViewModel = koinViewModel(),
+    ordersViewModel: OrdersViewModel = koinViewModel(),
     registrationViewModel: RegistrationViewModel = koinViewModel(),
 ) {
     val navController = rememberNavController()
     val authState by userViewModel.authState.collectAsState(AuthState.Loading)
+    val user by userViewModel.state.collectAsState()
+    val userType = user.userStateModel?.userType ?: UserType.USER
     val darkTheme = isSystemInDarkTheme()
     val context = LocalContext.current
     if (authState == AuthState.Loading) {
@@ -122,12 +129,28 @@ fun AppNavigation(
             }
 
             composable(FOOD) {
-                val tabsIcon = listOf(
-                    R.drawable.ic_food_bank,
-                    R.drawable.ic_shopping_cart,
-                    R.drawable.ic_clock,
-                    R.drawable.profile_icon
-                )
+                val tabsIcon = when (userType) {
+                    UserType.MANAGER -> listOf(
+                        R.drawable.ic_food_bank,
+                        R.drawable.ic_shopping_cart,
+                        R.drawable.ic_clock,
+                        R.drawable.profile_icon,
+                        R.drawable.ic_scanner
+                    )
+                    UserType.ADMIN -> listOf(
+                        R.drawable.ic_food_bank,
+                        R.drawable.ic_shopping_cart,
+                        R.drawable.ic_clock,
+                        R.drawable.profile_icon,
+                        R.drawable.ic_edit
+                    )
+                    else -> listOf(
+                        R.drawable.ic_food_bank,
+                        R.drawable.ic_shopping_cart,
+                        R.drawable.ic_clock,
+                        R.drawable.profile_icon
+                    )
+                }
                 var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -219,6 +242,20 @@ fun AppNavigation(
                             onRegisterClicked = { navController.navigate(REGISTRATION) },
                             onEditClicked = { navController.navigate(EDIT) }
                         )
+                        4 -> {
+                            when (userType) {
+                                UserType.ADMIN -> {
+                                    QrScannerScreen(
+                                        modifier = Modifier.padding(innerPadding),
+                                        viewModel = ordersViewModel
+                                    )
+                                }
+                                UserType.MANAGER -> {
+                                    AdminFoodEditorScreen(modifier = Modifier.padding(innerPadding))
+                                }
+                                else -> Unit
+                            }
+                        }
                     }
                 }
             }

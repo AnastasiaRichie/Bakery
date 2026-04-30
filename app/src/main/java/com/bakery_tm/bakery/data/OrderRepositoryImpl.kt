@@ -62,4 +62,12 @@ class OrderRepositoryImpl(
     override suspend fun calculateOrderTotal(orderId: Long, items: List<OrderResponseItem>): Double {
         return items.sumOf { it.quantity * it.product.price.replace(" BYN", "").replace(",", ".").toDouble() }
     }
+
+    override suspend fun getOrdersByEmail(email: String): List<OrderResponse> {
+        return orderApi.getOrdersByEmail(email)
+    }
+
+    override suspend fun markOrderReceived(orderId: Long) {
+        orderApi.markOrderReceived(orderId)
+    }
 }

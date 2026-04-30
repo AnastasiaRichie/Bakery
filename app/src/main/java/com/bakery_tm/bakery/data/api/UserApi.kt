@@ -1,5 +1,6 @@
 package com.bakery_tm.bakery.data.api
 
+import com.bakery_tm.bakery.models.UserType
 import retrofit2.http.Body
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -30,6 +31,7 @@ data class TokenResponse(val token: String, val userId: Int)
 data class UserResponse(
     val token: String? = null,
     val userId: Int,
+    val userType: UserType,
     val email: String,
     val name: String,
     val lastName: String

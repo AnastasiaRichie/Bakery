@@ -25,6 +25,7 @@ import com.bakery_tm.bakery.view_model.FoodViewModel
 import com.bakery_tm.bakery.view_model.ForgotPasswordViewModel
 import com.bakery_tm.bakery.view_model.MainViewModel
 import com.bakery_tm.bakery.view_model.OrderViewModel
+import com.bakery_tm.bakery.view_model.OrdersViewModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
@@ -109,6 +110,7 @@ val appModule = module {
     viewModel { FoodViewModel(get()) }
     viewModel { UserViewModel(get(), get(), get()) }
     viewModel { OrderViewModel(get(), get(), get()) }
+    viewModel { OrdersViewModel(get()) }
     viewModel { ShoppingCartViewModel(get(), get()) }
     viewModel { ForgotPasswordViewModel(get()) }
     viewModel { MainViewModel(userRepository = get(), webSocketManager = get()) }

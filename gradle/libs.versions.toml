@@ -20,6 +20,9 @@ navigationCompose = "2.9.3"
 roomRuntime = "2.8.3"
 retrofit = "3.0.0"
 securityCrypto = "1.1.0"
+barcodeScanning = "17.3.0"
+cameraCamera2 = "1.5.3"
+accompanistPermissions = "0.37.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -52,6 +55,12 @@ logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", ver
 jwtdecode = { module = "com.auth0.android:jwtdecode", version.ref = "jwtdecode" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCamera2" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraCamera2" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraCamera2" }
+barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanning" }
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

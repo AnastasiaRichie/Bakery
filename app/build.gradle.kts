@@ -89,6 +89,15 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation(libs.jwtdecode)
 
+    // CameraX
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    // ML Kit Barcode Scanner
+    implementation(libs.barcode.scanning)
+
+    implementation(libs.accompanist.permissions)
+
     implementation(libs.core)
 
     testImplementation(libs.junit)
