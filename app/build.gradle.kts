@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -51,6 +53,14 @@ android {
     buildFeatures {
         compose = true
     }
+
+    applicationVariants.all {
+        val variant = this
+        outputs.all {
+            val output = this as BaseVariantOutputImpl
+            output.outputFileName = "Bakery-v${variant.versionName}.apk"
+        }
+    }
 }
 
 dependencies {
@@ -78,6 +88,15 @@ dependencies {
     implementation(libs.logging.interceptor)
     implementation(libs.androidx.security.crypto)
     implementation(libs.jwtdecode)
+
+    // CameraX
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    // ML Kit Barcode Scanner
+    implementation(libs.barcode.scanning)
+
+    implementation(libs.accompanist.permissions)
 
     implementation(libs.core)
 

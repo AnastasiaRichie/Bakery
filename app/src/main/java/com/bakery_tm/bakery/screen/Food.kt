@@ -4,7 +4,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -55,6 +56,10 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.InputDark
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.common.getGreeting
 import com.bakery_tm.bakery.data.database.relations.CartItemWithProduct
 import com.bakery_tm.bakery.models.ProductModel
@@ -66,6 +71,7 @@ import com.bakery_tm.bakery.view_model.UserViewModel
 @Composable
 fun FoodScreen(
     modifier: Modifier,
+    darkTheme: Boolean,
     isLoggedIn: Boolean,
     viewModel: FoodViewModel,
     userViewModel: UserViewModel,
@@ -78,18 +84,22 @@ fun FoodScreen(
     val userState by userViewModel.state.collectAsState()
     val avatar by userViewModel.selectedAvatar.collectAsState()
     val cartItems by shoppingCartViewModel.cartItems.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     FoodScreenUi(
         modifier = modifier,
         foodList = foodList,
         cartItems = cartItems,
         avatar = avatar,
+        darkTheme = darkTheme,
         isLoggedIn = isLoggedIn,
+        error = error,
         user = userState.userStateModel?.name.orEmpty() + " " + userState.userStateModel?.lastName,
         onFoodClicked = onFoodClicked,
         onAddClicked = shoppingCartViewModel::addOrDeleteCartItem,
         onCartClicked = onCartClicked,
-        onRegisterClicked = onRegisterClicked
+        onRegisterClicked = onRegisterClicked,
+        onProductsUpdate = viewModel::getProducts,
     )
 }
 
@@ -99,19 +109,21 @@ fun FoodScreenUi(
     foodList: List<ProductModel>,
     cartItems: List<CartItemWithProduct>,
     avatar: ProfileAvatar,
+    darkTheme: Boolean,
     isLoggedIn: Boolean,
+    error: String?,
     user: String,
     onFoodClicked: (Long) -> Unit,
     onAddClicked: (Long) -> Unit,
     onCartClicked: () -> Unit,
     onRegisterClicked: () -> Unit,
+    onProductsUpdate: () -> Unit,
 ) {
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
     var selectedTab by remember { mutableIntStateOf(0) }
     Box(modifier.fillMaxSize().background(background)) {
         Column {
-            DashboardTopBar(isLoggedIn, user, avatar)
+            DashboardTopBar(isLoggedIn, darkTheme, user, avatar)
             if (!isLoggedIn) { ProductGuestBanner(onRegisterClicked) }
             val tabs = listOf("Все", "Еда", "Напитки")
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp, horizontal = 16.dp)) {
@@ -122,7 +134,7 @@ fun FoodScreenUi(
                             .padding(end = 8.dp)
                             .clip(RoundedCornerShape(32.dp))
                             .background(
-                                color = if (isSelected) Primary.copy(alpha = 0.1f) else Color.White
+                                color = if (isSelected) Primary else Color.White
                             )
                             .border(
                                 width = 0.5.dp,
@@ -140,27 +152,49 @@ fun FoodScreenUi(
                     }
                 }
             }
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.heightIn(min = 400.dp),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(
-                    items = when (selectedTab) {
-                        0 -> foodList
-                        1 -> foodList.filter { it.productType == ProductType.FLOUR }
-                        2 -> foodList.filter { it.productType == ProductType.DRINK }
-                        else -> foodList
-                    }) {
-                    ProductCard(
-                        product = it,
-                        cartItems = cartItems,
-                        onProductClicked = onFoodClicked,
-                        onAddClicked = onAddClicked,
-                        isLoggedIn = isLoggedIn
-                    )
+            if (error != null) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                        .padding(top = 72.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Произошла ошибка получения данных")
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = onProductsUpdate,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary,
+                            contentColor = BackgroundLight
+                        )
+                    ) {
+                        Text("Обновить список!")
+                    }
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.heightIn(min = 400.dp),
+                    contentPadding = PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(
+                        items = when (selectedTab) {
+                            0 -> foodList
+                            1 -> foodList.filter { it.productType == ProductType.FLOUR }
+                            2 -> foodList.filter { it.productType == ProductType.DRINK }
+                            else -> foodList
+                        }) {
+                        ProductCard(
+                            product = it,
+                            cartItems = cartItems,
+                            onProductClicked = onFoodClicked,
+                            onAddClicked = onAddClicked,
+                            isLoggedIn = isLoggedIn
+                        )
+                    }
                 }
             }
         }
@@ -217,9 +251,9 @@ fun ProductCard(
                         .padding(horizontal = 4.dp)
                 ) {
                     if (added) {
-                        Icon(Icons.Default.Check, null, tint = BackgroundDark)
+                        Icon(Icons.Default.Check, null, tint = BackgroundLight)
                     } else {
-                        Icon(Icons.Default.Add, null, tint = BackgroundDark)
+                        Icon(Icons.Default.Add, null, tint = BackgroundLight)
                     }
                 }
             }
@@ -231,7 +265,7 @@ fun ProductCard(
 fun CartFab(count: Int, modifier: Modifier, onCartClicked: () -> Unit) {
     Box(modifier = modifier) {
         FloatingActionButton(onClick = onCartClicked, containerColor = Primary) {
-            Icon(Icons.Default.ShoppingCart, null, tint = BackgroundDark)
+            Icon(Icons.Default.ShoppingCart, null, tint = BackgroundLight)
         }
         if (count > 0) {
             Box(
@@ -239,7 +273,8 @@ fun CartFab(count: Int, modifier: Modifier, onCartClicked: () -> Unit) {
                     .align(Alignment.TopEnd)
                     .offset(x = 6.dp, y = (-6).dp)
                     .size(18.dp)
-                    .background(Color.White, CircleShape),
+                    .background(Color.White, CircleShape)
+                    .border(1.dp, BackgroundDark, CircleShape),
             ) {
                 Text(
                     "$count",
@@ -271,7 +306,7 @@ fun ProductGuestBanner(onRegisterClick: () -> Unit) {
             Text("Присоединяйтесь к программе лояльности", color = Primary, fontWeight = FontWeight.Bold)
             Text("Зарабатывайте баллы за каждую покупку!", fontSize = 12.sp)
             Button(onClick = onRegisterClick, colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
-                Text("Зарегистрироваться", color = BackgroundDark)
+                Text("Зарегистрироваться", color = BackgroundLight)
             }
         }
     }
@@ -290,7 +325,7 @@ fun SearchBar() {
 }
 
 @Composable
-fun DashboardTopBar(isLoggedIn: Boolean, user: String, avatar: ProfileAvatar) {
+fun DashboardTopBar(isLoggedIn: Boolean, darkTheme: Boolean, user: String, avatar: ProfileAvatar) {
     val greeting = remember { getGreeting() }
     Column {
         Row(
@@ -298,11 +333,14 @@ fun DashboardTopBar(isLoggedIn: Boolean, user: String, avatar: ProfileAvatar) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(40.dp).clip(CircleShape).background(Primary)) {
+                Box(Modifier.size(40.dp).clip(CircleShape).background(Primary.copy(alpha = 0.4f))) {
                     Image(
                         modifier = Modifier.align(Alignment.Center),
                         painter = painterResource(avatar.iconRes),
-                        contentDescription = null
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(
+                            if (darkTheme) Color.LightGray else Color.Black
+                        )
                     )
                 }
                 Spacer(Modifier.width(12.dp))

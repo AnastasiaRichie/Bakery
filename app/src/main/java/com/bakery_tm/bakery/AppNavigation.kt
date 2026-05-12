@@ -1,8 +1,9 @@
 package com.bakery_tm.bakery
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -32,8 +33,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.bakery_tm.bakery.common.BorderDark
 import com.bakery_tm.bakery.domain.AuthState
-import com.bakery_tm.bakery.screen.EditScreen
+import com.bakery_tm.bakery.models.UserType
+import com.bakery_tm.bakery.screen.AdminFoodEditorScreen
+import com.bakery_tm.bakery.screen.EditFoodScreen
+import com.bakery_tm.bakery.screen.EditProfileScreen
 import com.bakery_tm.bakery.screen.FoodDetailsScreen
 import com.bakery_tm.bakery.screen.FoodScreen
 import com.bakery_tm.bakery.screen.ForgotPasswordScreen
@@ -41,11 +46,13 @@ import com.bakery_tm.bakery.screen.HistoryDetailsScreen
 import com.bakery_tm.bakery.screen.HistoryScreen
 import com.bakery_tm.bakery.screen.LoginScreen
 import com.bakery_tm.bakery.screen.ProfileScreen
+import com.bakery_tm.bakery.screen.QrScannerScreen
 import com.bakery_tm.bakery.screen.RegistrationScreen
 import com.bakery_tm.bakery.screen.ShoppingCartScreen
 import com.bakery_tm.bakery.screen.SplashScreen
 import com.bakery_tm.bakery.view_model.FoodViewModel
 import com.bakery_tm.bakery.view_model.OrderViewModel
+import com.bakery_tm.bakery.view_model.OrdersViewModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
@@ -58,11 +65,14 @@ fun AppNavigation(
     foodViewModel: FoodViewModel = koinViewModel(),
     shoppingCartViewModel: ShoppingCartViewModel = koinViewModel(),
     orderViewModel: OrderViewModel = koinViewModel(),
+    ordersViewModel: OrdersViewModel = koinViewModel(),
     registrationViewModel: RegistrationViewModel = koinViewModel(),
 ) {
     val navController = rememberNavController()
     val authState by userViewModel.authState.collectAsState(AuthState.Loading)
-    Log.e("qwe", "AppNavigation authState: " + authState)
+    val user by userViewModel.state.collectAsState()
+    val userType = user.userStateModel?.userType ?: UserType.USER
+    val darkTheme = isSystemInDarkTheme()
     val context = LocalContext.current
     if (authState == AuthState.Loading) {
         SplashScreen()
@@ -75,6 +85,8 @@ fun AppNavigation(
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     LoginScreen(
                         modifier = Modifier.padding(innerPadding),
+                        isConnected = isConnected,
+                        darkTheme = darkTheme,
                         viewModel = registrationViewModel,
                         orderViewModel = orderViewModel,
                         shoppingCartViewModel = shoppingCartViewModel,
@@ -92,8 +104,11 @@ fun AppNavigation(
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     RegistrationScreen(
                         modifier = Modifier.padding(innerPadding),
+                        darkTheme = darkTheme,
                         viewModel = registrationViewModel,
-                        onBack = { navController.popBackStack() },
+                        orderViewModel = orderViewModel,
+                        shoppingCartViewModel = shoppingCartViewModel,
+                        isConnected = isConnected,
                         onLoginClick = { navController.navigate(LOGIN) },
                     ) {
                         navController.navigate(FOOD) {
@@ -105,7 +120,8 @@ fun AppNavigation(
             composable(FORGOT_PASS) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     ForgotPasswordScreen(
-                        Modifier.padding(innerPadding)
+                        darkTheme = darkTheme,
+                        modifier = Modifier.padding(innerPadding)
                     ) {
                         navController.popBackStack()
                     }
@@ -113,24 +129,40 @@ fun AppNavigation(
             }
 
             composable(FOOD) {
-                val tabsIcon = listOf(
-                    R.drawable.ic_food_bank,
-                    R.drawable.ic_shopping_cart,
-                    R.drawable.ic_clock,
-                    R.drawable.profile_icon
-                )
+                val tabsIcon = when (userType) {
+                    UserType.MANAGER -> listOf(
+                        R.drawable.ic_food_bank,
+                        R.drawable.ic_shopping_cart,
+                        R.drawable.ic_clock,
+                        R.drawable.profile_icon,
+                        R.drawable.ic_scanner
+                    )
+                    UserType.ADMIN -> listOf(
+                        R.drawable.ic_food_bank,
+                        R.drawable.ic_shopping_cart,
+                        R.drawable.ic_clock,
+                        R.drawable.profile_icon,
+                        R.drawable.ic_edit
+                    )
+                    else -> listOf(
+                        R.drawable.ic_food_bank,
+                        R.drawable.ic_shopping_cart,
+                        R.drawable.ic_clock,
+                        R.drawable.profile_icon
+                    )
+                }
                 var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         TabRow(
                             selectedTabIndex = selectedTabIndex,
-                            containerColor = Color.White,
-                            contentColor = Color.White,
                             modifier = Modifier
+                                .padding(4.dp)
                                 .windowInsetsPadding(WindowInsets.navigationBars)
-                                .clip(
-                                    RoundedCornerShape(
+                                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                                .border(
+                                    1.dp, BorderDark, RoundedCornerShape(
                                         topStart = 16.dp,
                                         topEnd = 16.dp
                                     )
@@ -147,8 +179,12 @@ fun AppNavigation(
                                                 .padding(4.dp),
                                             contentDescription = null,
                                             colorFilter = ColorFilter.tint(
-                                                if (selectedTabIndex == index) Color.Black
-                                                else Color.Gray
+                                                when {
+                                                    darkTheme && selectedTabIndex == index -> Color.White
+                                                    !darkTheme && selectedTabIndex == index -> Color.Black
+                                                    darkTheme && selectedTabIndex != index -> Color.LightGray.copy(alpha = 0.5f)
+                                                    else -> Color.Gray
+                                                }
                                             )
                                         )
                                     },
@@ -168,6 +204,7 @@ fun AppNavigation(
                             userViewModel = userViewModel,
                             shoppingCartViewModel = shoppingCartViewModel,
                             isLoggedIn = authState == AuthState.Authenticated,
+                            darkTheme = darkTheme,
                             onFoodClicked = { navController.navigate(foodDetails(it)) },
                             onCartClicked = { selectedTabIndex = 1 },
                             onRegisterClicked = { navController.navigate(REGISTRATION) }
@@ -175,6 +212,7 @@ fun AppNavigation(
                         1 -> ShoppingCartScreen(
                             viewModel = shoppingCartViewModel,
                             orderViewModel = orderViewModel,
+                            darkTheme = darkTheme,
                             isLoggedIn = authState == AuthState.Authenticated,
                             modifier = Modifier.padding(innerPadding),
                             onToFoodListNavigate = { selectedTabIndex = 0 }
@@ -182,6 +220,7 @@ fun AppNavigation(
                         2 -> HistoryScreen(
                             modifier = Modifier.padding(innerPadding),
                             viewModel = orderViewModel,
+                            darkTheme = darkTheme,
                             isLoggedIn = authState == AuthState.Authenticated,
                             onStartOrderingClicked = { selectedTabIndex = 0 },
                             onLoginClicked = { navController.navigate(LOGIN) },
@@ -192,6 +231,7 @@ fun AppNavigation(
                             viewModel = userViewModel,
                             orderViewModel = orderViewModel,
                             shoppingCartViewModel = shoppingCartViewModel,
+                            darkTheme = darkTheme,
                             modifier = Modifier.padding(innerPadding),
                             onLogOutClicked = {
                                 navController.navigate(LOGIN) {
@@ -200,10 +240,27 @@ fun AppNavigation(
                             },
                             onLogInClicked = { navController.navigate(LOGIN) },
                             onRegisterClicked = { navController.navigate(REGISTRATION) },
-                            onEditClicked = {
-                                navController.navigate(EDIT)
-                            }
+                            onEditClicked = { navController.navigate(EDIT) }
                         )
+                        4 -> {
+                            when (userType) {
+                                UserType.MANAGER -> {
+                                    QrScannerScreen(
+                                        modifier = Modifier.padding(innerPadding),
+                                        viewModel = ordersViewModel
+                                    )
+                                }
+                                UserType.ADMIN -> {
+                                    AdminFoodEditorScreen(
+                                        modifier = Modifier.padding(innerPadding),
+                                        viewModel = foodViewModel,
+                                        darkTheme = darkTheme,
+                                        onEditProductNavigate = { navController.navigate(editProduct(it)) }
+                                    )
+                                }
+                                else -> Unit
+                            }
+                        }
                     }
                 }
             }
@@ -219,6 +276,7 @@ fun AppNavigation(
                             shoppingCartViewModel = shoppingCartViewModel,
                             isLoggedIn = authState == AuthState.Authenticated,
                             modifier = Modifier.padding(innerPadding),
+                            darkTheme = darkTheme,
                             productId = productId
                         ) { navController.popBackStack() }
                     }
@@ -228,8 +286,9 @@ fun AppNavigation(
             }
             composable(EDIT) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    EditScreen(
+                    EditProfileScreen(
                         viewModel = userViewModel,
+                        darkTheme = darkTheme,
                         modifier = Modifier.padding(innerPadding),
                         onBackClicked = { navController.popBackStack() }
                     )
@@ -250,9 +309,29 @@ fun AppNavigation(
                             orderViewModel,
                             modifier = Modifier.padding(innerPadding),
                             orderId = it,
+                            darkTheme = darkTheme,
                             index = index ?: 0,
                             onBackClicked = { navController.popBackStack() }
                         )
+                    }
+                } ?: run {
+                    Toast.makeText(context, "Screen not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+            composable(
+                EDIT_FOOD,
+                arguments = listOf(navArgument(PRODUCT_ID) { type = NavType.LongType })
+            ) {
+                val productId = it.arguments?.getLong(PRODUCT_ID)
+                productId?.let {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                        EditFoodScreen(
+                            viewModel = foodViewModel,
+                            shoppingCartViewModel = shoppingCartViewModel,
+                            modifier = Modifier.padding(innerPadding),
+                            darkTheme = darkTheme,
+                            productId = productId
+                        ) { navController.popBackStack() }
                     }
                 } ?: run {
                     Toast.makeText(context, "Screen not found", Toast.LENGTH_SHORT).show()
@@ -270,9 +349,10 @@ const val PRODUCT_ID = "productId"
 const val ORDER_ID = "orderId"
 const val ORDER_INDEX = "orderIndex"
 const val FOOD_DETAILS = "food/{productId}"
+const val EDIT_FOOD = "edit/{productId}"
 const val EDIT = "edit"
 const val HISTORY_DETAILS = "history/{orderId}/{orderIndex}"
 
 fun foodDetails(productId: Long) = "food/$productId"
-fun editType(type: String) = "edit/$type"
+fun editProduct(productId: Long) = "edit/$productId"
 fun historyDetails(orderId: Long, index: Int) = "history/$orderId/$index"

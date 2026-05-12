@@ -1,7 +1,6 @@
 package com.bakery_tm.bakery.data
 
 import com.bakery_tm.bakery.common.AuthManager
-import com.bakery_tm.bakery.data.api.NoAuthException
 import com.bakery_tm.bakery.data.api.OrderApi
 import com.bakery_tm.bakery.data.database.CartDao
 import com.bakery_tm.bakery.data.database.entity.toModel
@@ -15,6 +14,7 @@ import com.bakery_tm.bakery.models.Address
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
+import java.io.IOException
 
 class OrderRepositoryImpl(
     private val cartDao: CartDao,
@@ -36,7 +36,7 @@ class OrderRepositoryImpl(
                 )
             )
             cartDao.clearCart(userId)
-        } catch (e: NoAuthException) {
+        } catch (e: IOException) {
             authManager.clearToken()
             authManager.setAuthState(AuthState.Unauthenticated)
         }
@@ -50,16 +50,24 @@ class OrderRepositoryImpl(
         try {
             val orders = orderApi.getOrders().sortedBy { it.date }
             emit(orders)
-        } catch (e: NoAuthException) {
+        } catch (e: IOException) {
             emit(emptyList())
         }
     }
 
     override suspend fun getOrderDetails(orderId: Long): OrderResponse? {
-        return try { orderApi.getOrder(orderId) } catch (e: NoAuthException) { null }
+        return try { orderApi.getOrder(orderId) } catch (e: IOException) { null }
     }
 
     override suspend fun calculateOrderTotal(orderId: Long, items: List<OrderResponseItem>): Double {
-        return items.sumOf { it.quantity * it.product.price.replace(" BYN", "").toDouble() }
+        return items.sumOf { it.quantity * it.product.price.replace(" BYN", "").replace(",", ".").toDouble() }
+    }
+
+    override suspend fun getOrdersByEmail(email: String): List<OrderResponse> {
+        return orderApi.getOrdersByEmail(email)
+    }
+
+    override suspend fun markOrderReceived(orderId: Long) {
+        orderApi.markOrderReceived(orderId)
     }
 }

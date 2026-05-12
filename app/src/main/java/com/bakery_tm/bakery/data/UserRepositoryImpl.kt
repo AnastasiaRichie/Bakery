@@ -1,11 +1,14 @@
 package com.bakery_tm.bakery.data
 
 import com.bakery_tm.bakery.common.AuthManager
+import com.bakery_tm.bakery.data.api.EmailRequest
 import com.bakery_tm.bakery.data.api.ErrorHandler
 import com.bakery_tm.bakery.data.api.LoginRequest
 import com.bakery_tm.bakery.data.api.OrderApi
+import com.bakery_tm.bakery.data.api.UpdateUserPassRequest
 import com.bakery_tm.bakery.data.api.UpdateUserRequest
 import com.bakery_tm.bakery.data.api.UserApi
+import com.bakery_tm.bakery.data.api.UserResponse
 import com.bakery_tm.bakery.data.database.UserDao
 import com.bakery_tm.bakery.data.database.entity.UserEntity
 import com.bakery_tm.bakery.data.database.entity.toEntity
@@ -14,6 +17,7 @@ import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.models.toApi
 import kotlinx.coroutines.flow.Flow
 import retrofit2.HttpException
+import java.io.IOException
 
 class UserRepositoryImpl(
     private val loginApi: UserApi,
@@ -24,6 +28,14 @@ class UserRepositoryImpl(
 ): UserRepository {
 
     override fun getUser(): Flow<UserEntity?> = userDao.getUser()
+
+    override suspend fun getUserByEmail(email: String): UserResponse? {
+        return try {
+            loginApi.getUserByEmail(EmailRequest(email))
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     override suspend fun insertUser(user: UserEntity) {
         userDao.insertUser(user)
@@ -37,7 +49,7 @@ class UserRepositoryImpl(
     override suspend fun register(model: UserStateModel) {
         try {
             val tokenResponse = loginApi.register(model.toApi())
-            userDao.insertUser(model.toEntity().copy(userId = tokenResponse.userId))
+            userDao.insertUser(model.toEntity().copy(userId = tokenResponse.userId, userType = tokenResponse.userType))
             authManager.saveToken(tokenResponse.token)
         } catch (e: HttpException) {
             throw Exception(errorHandler.parseError(e))
@@ -57,10 +69,21 @@ class UserRepositoryImpl(
     override suspend fun updateUser(name: String?, lastName: String?, email: String?, password: String?) {
         try {
             if (name == null && lastName == null && email == null && password == null) return
-            orderApi.updateUser(UpdateUserRequest(name, lastName, email, password))
+            val user = orderApi.updateUser(UpdateUserRequest(name, lastName, email, password))
             name?.let { userDao.updateUserName(it) }
             lastName?.let { userDao.updateUserSurname(it) }
             email?.let { userDao.updateUserEmail(it) }
+            userDao.updateUserType(user.userType)
+        } catch (e: HttpException) {
+            throw Exception(errorHandler.parseError(e))
+        } catch (e: IOException) {
+            throw Exception("Произошла ошибка, повторите попытку позже!")
+        }
+    }
+
+    override suspend fun updateUserPassword(email: String, password: String) {
+        try {
+            loginApi.updateUserPassword(UpdateUserPassRequest(email, password))
         } catch (e: HttpException) {
             throw Exception(errorHandler.parseError(e))
         }

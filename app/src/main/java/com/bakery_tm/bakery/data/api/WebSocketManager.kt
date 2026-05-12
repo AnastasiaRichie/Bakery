@@ -1,6 +1,7 @@
 package com.bakery_tm.bakery.data.api
 
 import com.bakery_tm.bakery.common.UpdateOrderListener
+import com.bakery_tm.bakery.di.BASE_DOMAIN
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -15,7 +16,7 @@ class WebSocketManager(private val okHttpClient: OkHttpClient) {
 
     fun connect(userId: Int) {
         if (webSocket != null) return
-        val request = Request.Builder().url("ws://192.168.144.158:8080/api/orders/$userId").build()
+        val request = Request.Builder().url("ws://$BASE_DOMAIN/api/orders/$userId").build()
         webSocket = okHttpClient.newWebSocket(
             request,
             object : WebSocketListener() {

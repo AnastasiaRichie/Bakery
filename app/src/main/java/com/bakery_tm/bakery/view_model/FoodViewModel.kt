@@ -8,6 +8,7 @@ import com.bakery_tm.bakery.models.ProductModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 class FoodViewModel(
@@ -17,12 +18,32 @@ class FoodViewModel(
     private val _state = MutableStateFlow<List<ProductModel>>(emptyList())
     val state: StateFlow<List<ProductModel>> = _state
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     private val _selected = MutableStateFlow<ProductModel?>(null)
     val selected: StateFlow<ProductModel?> = _selected
 
     init {
+        getProducts()
+    }
+
+    fun getProducts() {
         viewModelScope.launch(Dispatchers.IO) {
-            foodRepository.getProducts().collect { _state.emit(it.map { it.toModel() }) }
+            _error.emit(null)
+            foodRepository
+                .getProducts()
+                .catch {
+                    _error.emit("")
+                }
+                .collect {
+                    if (it.isNotEmpty()) {
+                        _error.emit(null)
+                        _state.emit(it.map { it.toModel() })
+                    } else {
+                        _error.emit("")
+                    }
+                }
         }
     }
 
@@ -30,6 +51,16 @@ class FoodViewModel(
         viewModelScope.launch {
             val food = _state.value.find { it.productId == productId } ?: return@launch
             _selected.emit(food)
+        }
+    }
+
+    fun removeProduct(productId: Long) {
+        viewModelScope.launch {
+            try {
+                val newProducts = foodRepository.removeProduct(productId)
+                _state.emit(newProducts.map { it.toModel() })
+            } catch (e: Exception) {
+            }
         }
     }
 }

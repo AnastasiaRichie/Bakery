@@ -66,7 +66,7 @@ class ShoppingCartRepositoryImpl(
 
     override fun calculateCartTotal(userId: Int): Flow<Double> {
         val items = getCartFull(userId)
-        return items.map { it.sumOf { it.product.price.replace(" BYN", "").toDouble() * it.item.quantity } }
+        return items.map { it.sumOf { it.product.price.replace(" BYN", "").replace(",", ".").toDouble() * it.item.quantity } }
     }
 
     override fun getCart(productId: Long): Flow<CartItemEntity?> = cartDao.getCart(productId)

@@ -9,7 +9,6 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,18 +52,21 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.bakery_tm.bakery.R
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
 import com.bakery_tm.bakery.common.CopyReceiver
 import com.bakery_tm.bakery.common.InputField
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.view_model.ForgotPasswordViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ForgotPasswordScreen(
     modifier: Modifier,
+    darkTheme: Boolean,
     onBackClicked: () -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {}
@@ -74,7 +76,7 @@ fun ForgotPasswordScreen(
     }
     val context = LocalContext.current
     val viewModel = koinViewModel<ForgotPasswordViewModel>()
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.email.collectAsState()
     val userNotExistsEvent by viewModel.userNotExistsEvent.collectAsState(false)
     LaunchedEffect(Unit) {
         viewModel.sendNotification.collect { pass ->
@@ -85,7 +87,7 @@ fun ForgotPasswordScreen(
     ForgotPasswordScreenUi(
         modifier = modifier,
         email = state,
-        dark = dark,
+        darkTheme = darkTheme,
         userNotExistsEvent = userNotExistsEvent,
         background = background,
         onEmailChanged = { email -> viewModel.onEmailChanged(email) },
@@ -98,7 +100,7 @@ fun ForgotPasswordScreen(
 fun ForgotPasswordScreenUi(
     modifier: Modifier,
     email: String,
-    dark: Boolean,
+    darkTheme: Boolean,
     userNotExistsEvent: Boolean,
     background: Color,
     onEmailChanged: (String) -> Unit,
@@ -116,16 +118,15 @@ fun ForgotPasswordScreenUi(
                 .verticalScroll(rememberScrollState())
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.Default.ArrowBack, null)
                 }
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.width(8.dp))
                 Text("Восстановить пароль", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.weight(1f))
-                Spacer(Modifier.width(32.dp))
             }
 
             Text(
@@ -135,7 +136,7 @@ fun ForgotPasswordScreenUi(
             )
             Text(
                 "Если забыли пароль, введите почту, на которую был зарегистрирован аккаунт, и вам придет временный пароль. Войдите по нему и после в настройках аккаунта поменяйте его.",
-                color = if (dark) Color(0xFFD1D5DB) else Color(0xFF4B5563),
+                color = if (darkTheme) Color(0xFFD1D5DB) else Color(0xFF4B5563),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
@@ -143,7 +144,6 @@ fun ForgotPasswordScreenUi(
                 value = email,
                 onEmailChanged = { email -> onEmailChanged(email) },
                 emailFocusRequester = emailFocusRequester,
-                onClear = { onEmailChanged("") }
             )
 
             if (userNotExistsEvent) {
@@ -175,12 +175,13 @@ fun ForgotPasswordScreenUi(
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Primary)
                 ) {
-                    Text("Отправить Временный Пароль", color = BackgroundDark)
+                    Text("Отправить Временный Пароль", color = BackgroundLight)
                     Spacer(Modifier.width(8.dp))
-                    Icon(Icons.Default.Send, null, tint = BackgroundDark)
+                    Icon(Icons.Default.Send, null, tint = BackgroundLight)
                 }
 
                 TextButton(
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = if (darkTheme) BackgroundLight else BackgroundDark),
                     onClick = onBack,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
@@ -208,33 +209,17 @@ fun EmailField(
     value: String,
     emailFocusRequester: FocusRequester,
     onEmailChanged: (String) -> Unit,
-    onClear: () -> Unit
 ) {
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text("Почта", fontWeight = FontWeight.Medium)
+    Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
         InputField(
             name = value,
-            label = stringResource(R.string.email),
+            label = "Почта",
             type = KeyboardType.Email,
             padding = 4,
             onValueChanged = onEmailChanged,
             currentRequest = emailFocusRequester,
             placeholder = { Text("Например, example@mail.com") },
         )
-//        OutlinedTextField(
-//            value = value,
-//            onValueChange = onValueChange,
-//            modifier = Modifier.fillMaxWidth(),
-//            shape = RoundedCornerShape(12.dp),
-//            placeholder = { Text("Например, example@mail.com") },
-//            trailingIcon = {
-//                if (value.isNotEmpty()) {
-//                    IconButton(onClick = onClear) {
-//                        Icon(Icons.Default.Clear, null)
-//                    }
-//                }
-//            }
-//        )
     }
 }
 

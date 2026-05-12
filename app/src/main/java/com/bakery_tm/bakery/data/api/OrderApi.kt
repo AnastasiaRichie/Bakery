@@ -9,6 +9,7 @@ import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface OrderApi {
     @GET("orders")
@@ -25,5 +26,15 @@ interface OrderApi {
 
     @PATCH("update-user")
     suspend fun updateUser(@Body request: UpdateUserRequest): UserResponse
+
+    @GET("ordersByEmail")
+    suspend fun getOrdersByEmail(
+        @Query("email") email: String
+    ): List<OrderResponse>
+
+    @POST("orders/{id}/received")
+    suspend fun markOrderReceived(
+        @Path("id") orderId: Long
+    )
 }
 

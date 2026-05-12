@@ -5,44 +5,16 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.bakery_tm.bakery.data.database.entity.UserEntity
+import com.bakery_tm.bakery.models.UserType
 import kotlinx.coroutines.flow.Flow
-
-//@Dao
-//interface UserDao {
-//
-//    // Добавить пользователя
-//    @Insert(onConflict = OnConflictStrategy.REPLACE)
-//    suspend fun insert(user: UserEntity)
-//
-//    // Получить пользователя по почте
-//    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
-//    suspend fun getUserByEmail(email: String): UserEntity?
-//
-//    // Установить пользователя как залогиненого по почте
-//    @Query("UPDATE users SET isLoggedIn = :isLoggedIn WHERE email = :email")
-//    suspend fun updateIsLoggedIn(isLoggedIn: Boolean, email: String)
-//
-//    // Получить залогиненого пользователя
-//    @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
-//    fun getLoggedInUser(): Flow<UserEntity?>
-//
-//    @Query("UPDATE users SET name = :name WHERE userId = :userId")
-//    suspend fun updateUserName(name: String, userId: Int)
-//
-//    @Query("UPDATE users SET surname = :surname WHERE userId = :userId")
-//    suspend fun updateUserSurname(surname: String, userId: Int)
-//
-//    @Query("UPDATE users SET email = :email WHERE userId = :userId")
-//    suspend fun updateUserEmail(email: String, userId: Int)
-//
-//    @Query("UPDATE users SET hashedPassword = :password WHERE userId = :userId")
-//    suspend fun updateUserPassword(password: String, userId: Int)
-//}
 
 @Dao
 interface UserDao {
     @Query("SELECT * FROM users LIMIT 1")
     fun getUser(): Flow<UserEntity?>
+
+    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    suspend fun getUserByEmail(email: String): UserEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: UserEntity)
@@ -55,6 +27,9 @@ interface UserDao {
 
     @Query("UPDATE users SET email = :email")
     suspend fun updateUserEmail(email: String)
+
+    @Query("UPDATE users SET userType = :userType")
+    suspend fun updateUserType(userType: UserType)
 
     @Query("DELETE FROM users")
     suspend fun deleteUser()

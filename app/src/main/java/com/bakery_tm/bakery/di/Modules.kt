@@ -25,6 +25,7 @@ import com.bakery_tm.bakery.view_model.FoodViewModel
 import com.bakery_tm.bakery.view_model.ForgotPasswordViewModel
 import com.bakery_tm.bakery.view_model.MainViewModel
 import com.bakery_tm.bakery.view_model.OrderViewModel
+import com.bakery_tm.bakery.view_model.OrdersViewModel
 import com.bakery_tm.bakery.view_model.RegistrationViewModel
 import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
@@ -109,6 +110,7 @@ val appModule = module {
     viewModel { FoodViewModel(get()) }
     viewModel { UserViewModel(get(), get(), get()) }
     viewModel { OrderViewModel(get(), get(), get()) }
+    viewModel { OrdersViewModel(get()) }
     viewModel { ShoppingCartViewModel(get(), get()) }
     viewModel { ForgotPasswordViewModel(get()) }
     viewModel { MainViewModel(userRepository = get(), webSocketManager = get()) }
@@ -123,4 +125,5 @@ fun provideEncryptedPrefs(context: Context) =
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-private const val BASE_URL = "http://192.168.144.158:8080/api/"
+const val BASE_DOMAIN = "192.168.1.72:8080"
+private const val BASE_URL = "http://$BASE_DOMAIN/api/"

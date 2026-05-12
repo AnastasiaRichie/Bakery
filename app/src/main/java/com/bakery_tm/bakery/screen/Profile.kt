@@ -1,27 +1,20 @@
 package com.bakery_tm.bakery.screen
 
 import android.graphics.Bitmap
-import androidx.annotation.DrawableRes
-import androidx.compose.animation.AnimatedVisibility
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +24,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.Bottom
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -40,19 +32,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
-import com.bakery_tm.bakery.R
+import com.bakery_tm.bakery.common.BackgroundDark
+import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.InputDark
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
 import com.bakery_tm.bakery.view_model.OrderViewModel
@@ -60,7 +52,6 @@ import com.bakery_tm.bakery.view_model.ShoppingCartViewModel
 import com.bakery_tm.bakery.view_model.UserViewModel
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
-import kotlin.text.forEach
 import android.graphics.Color as AndroidColor
 
 @Composable
@@ -68,6 +59,7 @@ fun ProfileScreen(
     viewModel: UserViewModel,
     orderViewModel: OrderViewModel,
     shoppingCartViewModel: ShoppingCartViewModel,
+    darkTheme: Boolean,
     modifier: Modifier,
     onLogOutClicked: () -> Unit,
     onLogInClicked: () -> Unit,
@@ -76,24 +68,17 @@ fun ProfileScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val avatar by viewModel.selectedAvatar.collectAsState()
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 NavigationEvent.NavigateToRegister -> onLogOutClicked()
-                //is NavigationEvent.NavigateToEdit -> onEditClicked(event.type)
                 is NavigationEvent.ShowError -> println("Ошибка: ${event.message}")
                 else -> Unit
             }
         }
     }
     val model = state.userStateModel
-//    val model = UserStateModel(
-//        userId = 1,
-//        name = "name",
-//        surname = "surname",
-//        email = "email",
-//        password = "password"
-//    )
     when {
         state.isLoading -> {
             LoadingScreen()
@@ -104,6 +89,8 @@ fun ProfileScreen(
                 modifier,
                 model,
                 avatar,
+                darkTheme,
+                background,
                 onEditClicked
             ) {
                 orderViewModel.onLogoutClicked()
@@ -114,14 +101,10 @@ fun ProfileScreen(
         model == null -> {
             GuestProfileScreen(
                 modifier,
+                darkTheme,
                 onLogInClicked,
                 onRegisterClicked
             )
-//            UnregisteredProfileScreenUi(
-//                modifier,
-//                onLogInClicked,
-//                onRegisterClicked
-//            )
         }
     }
 }
@@ -131,21 +114,23 @@ fun ProfileScreenUi(
     modifier: Modifier,
     model: UserStateModel,
     avatar: ProfileAvatar,
+    darkTheme: Boolean,
+    background: Color,
     onEditClicked: () -> Unit,
     onLogOutClicked: () -> Unit
 ) {
     LazyColumn(modifier = modifier
         .fillMaxSize()
-        .background(BackgroundDark)) {
+        .background(background)) {
         item { ProfileHeader(model, avatar, onEditClicked) }
-        item { QrCard(model.email) }
+        item { QrCard(model.email, darkTheme) }
         item { Spacer(Modifier.height(16.dp)) }
         item {
             Spacer(Modifier.height(24.dp))
             OutlinedButton(
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary.copy(alpha = 0.1f),
-                    contentColor = Primary
+                    containerColor = Primary.copy(alpha = 0.6f),
+                    contentColor = Color.White
                 ),
                 onClick = onLogOutClicked,
                 modifier = Modifier
@@ -155,160 +140,25 @@ fun ProfileScreenUi(
             ) { Text("Выйти") }
         }
     }
-
-//    Column(
-//        modifier = modifier
-//            .fillMaxSize()
-//            .padding(horizontal = 16.dp)
-//            .systemBarsPadding()
-//    ) {
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth(),
-//            horizontalArrangement = Arrangement.Start,
-//        ) {
-//            Text(
-//                text = "Profile",
-//                style = MaterialTheme.typography.titleLarge
-//            )
-//        }
-//    }
-//    Column(
-//        Modifier
-//            .fillMaxSize()
-//            .padding(top = 96.dp, bottom = 104.dp)
-//            .padding(horizontal = 16.dp)
-//    ) {
-//        AccountRow(label = "Name", value = model.name, type = AccountFieldType.NAME, onEditClicked = onEditClicked)
-//        AccountRow(label = "Surname", value = model.surname, type = AccountFieldType.SURNAME, onEditClicked = onEditClicked)
-//        AccountRow(label = "Email", value = model.email, type = AccountFieldType.EMAIL, onEditClicked = onEditClicked)
-//        AccountRow(label = "Password", value = model.password, type = AccountFieldType.PASSWORD, onEditClicked = onEditClicked)
-//
-//        Spacer(Modifier.height(24.dp))
-//
-//        Text(
-//            text = "Ваш QR-код",
-//            fontWeight = FontWeight.Bold,
-//            fontSize = 18.sp,
-//            modifier = Modifier.align(CenterHorizontally)
-//        )
-//
-//        Column(modifier = Modifier
-//            .fillMaxWidth()
-//            .height(88.dp)) {
-//            Image(
-//                bitmap = bitmap.asImageBitmap(),
-//                contentDescription = "QR Code",
-//                modifier = Modifier
-//                    .size(64.dp)
-//                    .align(CenterHorizontally)
-//                    .clickable { showQr = true },
-//                contentScale = ContentScale.Fit
-//            )
-//            Text("Коснитесь, чтобы открыть QR", color = Color.LightGray, fontSize = 12.sp, modifier = Modifier
-//                .align(CenterHorizontally)
-//                .clickable { showQr = true })
-//        }
-//
-//        Text(
-//            "Отсканируйте на кассе для получения заказа",
-//            modifier = Modifier.fillMaxWidth()
-//        )
-//
-//        Spacer(modifier = Modifier.weight(1f))
-//
-//        Button(
-//            onClick = onLogOutClicked,
-//            shape = RoundedCornerShape(12.dp),
-//            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(58.dp)
-//                .padding(vertical = 8.dp)
-//        ) {
-//            Text(
-//                text = "Logout",
-//                color = Color.Black,
-//                fontSize = 18.sp
-//            )
-//        }
-//    }
-}
-
-@Composable
-fun UnregisteredProfileScreenUi(
-    modifier: Modifier,
-    onLogInClicked: () -> Unit,
-    onRegisterClicked: () -> Unit
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-        ) {
-            Text(
-                text = "Profile",
-                style = MaterialTheme.typography.titleLarge
-            )
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Button(
-            onClick = onLogInClicked,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Black,
-                contentColor = Color.White,
-                disabledContainerColor = Color.DarkGray,
-                disabledContentColor = Color.Gray,
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp)
-                .padding(top = 8.dp),
-        ) {
-            Text("Login")
-        }
-        Button(
-            onClick = onRegisterClicked,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Gray,
-                contentColor = Color.Black,
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp)
-                .padding(top = 8.dp),
-        ) {
-            Text("Sign up")
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Text(
-            fontSize = 12.sp,
-            text = "Вы не вошли в аккаунт и не можете делать заказы. Войдите или зарегистрируйтесь, чтобы иметь доступ ко всем возможностям приложения",
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
 }
 
 @Composable
 fun GuestProfileScreen(
     modifier: Modifier,
+    darkTheme: Boolean,
     onLogInClicked: () -> Unit,
     onRegisterClicked: () -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
-    val background = if (dark) BackgroundDark else BackgroundLight
+    val background = if (darkTheme) BackgroundDark else BackgroundLight
 
     Box(modifier = modifier
         .fillMaxSize()
         .background(background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.weight(1f).padding(horizontal = 24.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = CenterHorizontally
             ) {
                 Spacer(Modifier.height(32.dp))
@@ -319,23 +169,6 @@ fun GuestProfileScreen(
                 GuestButtons(onLogInClicked, onRegisterClicked)
             }
         }
-    }
-}
-
-@Composable
-fun GuestProfileTopBar() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White.copy(alpha = 0.9f))
-            .padding(vertical = 16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            "Profile",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
     }
 }
 
@@ -396,7 +229,7 @@ fun GuestButtons(onLogInClicked: () -> Unit, onRegisterClicked: () -> Unit) {
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Primary)
         ) {
-            Text("Войти", fontWeight = FontWeight.Bold, color = BackgroundDark)
+            Text("Войти", fontWeight = FontWeight.Bold, color = BackgroundLight)
         }
         OutlinedButton(
             onClick = onRegisterClicked,
@@ -413,6 +246,7 @@ fun GuestButtons(onLogInClicked: () -> Unit, onRegisterClicked: () -> Unit) {
 @Composable
 fun QrWithCloseDialog(
     bitmap: ImageBitmap,
+    darkTheme: Boolean,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -444,7 +278,7 @@ fun QrWithCloseDialog(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close",
-                    tint = Color.White
+                    tint = if (darkTheme) Color.White else BackgroundDark
                 )
             }
         }
@@ -463,7 +297,7 @@ private fun generateQrBitmap(content: String, size: Int = 600): Bitmap {
 }
 
 @Composable
-fun QrCard(email: String) {
+fun QrCard(email: String, darkTheme: Boolean) {
     var showQr by remember { mutableStateOf(false) }
 
     val qrContent = """
@@ -474,14 +308,14 @@ fun QrCard(email: String) {
         generateQrBitmap(qrContent)
     }
     if (showQr) {
-        QrWithCloseDialog(bitmap.asImageBitmap()) { showQr = false }
+        QrWithCloseDialog(bitmap.asImageBitmap(), darkTheme) { showQr = false }
     }
     Card(
         modifier = Modifier
             .padding(16.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = InputDark)
+        colors = CardDefaults.cardColors(containerColor = if (darkTheme) InputDark else Primary.copy(alpha = 0.85f))
     ) {
         Column(modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -489,7 +323,7 @@ fun QrCard(email: String) {
             Text("Ваш QR-код", fontWeight = FontWeight.Bold, fontSize = 20.sp)
             Text(
                 "Отсканируйте на кассе для получения заказа.",
-                color = Color.White.copy(alpha = 0.6f),
+                color = Color.White,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -506,6 +340,7 @@ fun QrCard(email: String) {
                 contentDescription = "QR Code",
                 modifier = Modifier
                     .size(96.dp)
+                    .clip(RoundedCornerShape(8.dp))
                     .align(CenterHorizontally)
                     .clickable { showQr = true },
                 contentScale = ContentScale.Fit
@@ -513,7 +348,7 @@ fun QrCard(email: String) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 "Коснитесь, чтобы открыть QR",
-                color = Color.LightGray,
+                color = Color.White,
                 fontSize = 12.sp,
                 modifier = Modifier
                     .align(CenterHorizontally)

@@ -4,6 +4,7 @@ import com.bakery_tm.bakery.data.api.RegisterRequest
 
 data class UserStateModel(
     val userId: Int = -1,
+    val userType: UserType = UserType.USER,
     val name: String = "",
     val lastName: String? = null,
     val email: String = "",

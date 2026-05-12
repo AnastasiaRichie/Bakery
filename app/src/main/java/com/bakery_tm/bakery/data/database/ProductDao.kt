@@ -18,7 +18,7 @@ interface ProductDao {
     // Получить доступные позиции пекарни
     @Transaction
     @Query("SELECT * FROM products")
-    fun getAllProducts(): List<ProductEntity>
+    suspend fun getAllProducts(): List<ProductEntity>
 
     // Получить позицию пекарни по id
     @Query("SELECT * FROM products WHERE productId = :productId")

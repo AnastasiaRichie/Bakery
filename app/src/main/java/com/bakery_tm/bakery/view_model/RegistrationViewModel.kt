@@ -1,10 +1,10 @@
 package com.bakery_tm.bakery.view_model
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bakery_tm.bakery.common.AuthManager
 import com.bakery_tm.bakery.domain.UserRepository
+import com.bakery_tm.bakery.models.EmptyFieldException
 import com.bakery_tm.bakery.models.FieldType
 import com.bakery_tm.bakery.models.NavigationEvent
 import com.bakery_tm.bakery.models.UserStateModel
@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.net.ConnectException
 
 class RegistrationViewModel(
     private val userRepository: UserRepository,
@@ -31,9 +32,11 @@ class RegistrationViewModel(
     fun onLoginClick(email: String, password: String) {
         viewModelScope.launch {
             try {
+                if (email.isEmpty() || password.isEmpty()) throw EmptyFieldException()
                 userRepository.login(email, password)
+            } catch (e: ConnectException) {
+                _events.emit(NavigationEvent.ShowError("Подключите интернет для продолжения работы"))
             } catch (e: Exception) {
-                Log.e("qwe", "onLoginClick e: " + e)
                 _events.emit(NavigationEvent.ShowError(e.message.orEmpty()))
             }
         }
@@ -42,7 +45,10 @@ class RegistrationViewModel(
     fun onRegisterClick(model: UserStateModel) {
         viewModelScope.launch {
             try {
+                if (model.email.isEmpty() || model.name.isEmpty() || model.password.isEmpty()) throw EmptyFieldException()
                 userRepository.register(model)
+            } catch (e: ConnectException) {
+                _events.emit(NavigationEvent.ShowError("Подключите интернет для продолжения работы"))
             } catch (e: Exception) {
                 _events.emit(NavigationEvent.ShowError(e.message.orEmpty()))
             }

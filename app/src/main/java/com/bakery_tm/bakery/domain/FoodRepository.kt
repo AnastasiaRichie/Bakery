@@ -4,5 +4,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface FoodRepository {
 
-    suspend fun getProducts(): Flow<List<ProductDomainModel>>
+    fun getProducts(): Flow<List<ProductDomainModel>>
+
+    suspend fun removeProduct(productId: Long): List<ProductDomainModel>
 }
