@@ -8,7 +8,20 @@ plugins {
 android {
     namespace = "com.bakery_tm.bakery"
     compileSdk = 35
-
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/notice.txt"
+            )
+        }
+    }
     defaultConfig {
         applicationId = "com.bakery_tm.bakery"
         minSdk = 26
@@ -58,6 +71,13 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
+    implementation(libs.okhttp)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.jwtdecode)
 
     implementation(libs.core)
 

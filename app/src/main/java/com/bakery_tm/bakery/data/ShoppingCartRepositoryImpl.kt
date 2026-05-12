@@ -53,7 +53,7 @@ class ShoppingCartRepositoryImpl(
     override fun getCartFull(userId: Int): Flow<List<CartItemWithProduct>> {
         return cartDao.getCarts(userId).mapNotNull { carts ->
             carts.mapNotNull { item ->
-                val product = productDao.getAllProducts().firstOrNull()?.find { it.productId == item.productId }
+                val product = productDao.getAllProducts().find { it.productId == item.productId }
                 product?.let {
                     CartItemWithProduct(
                         item = item,

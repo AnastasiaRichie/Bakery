@@ -7,34 +7,55 @@ import androidx.room.Query
 import com.bakery_tm.bakery.data.database.entity.UserEntity
 import kotlinx.coroutines.flow.Flow
 
+//@Dao
+//interface UserDao {
+//
+//    // Добавить пользователя
+//    @Insert(onConflict = OnConflictStrategy.REPLACE)
+//    suspend fun insert(user: UserEntity)
+//
+//    // Получить пользователя по почте
+//    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+//    suspend fun getUserByEmail(email: String): UserEntity?
+//
+//    // Установить пользователя как залогиненого по почте
+//    @Query("UPDATE users SET isLoggedIn = :isLoggedIn WHERE email = :email")
+//    suspend fun updateIsLoggedIn(isLoggedIn: Boolean, email: String)
+//
+//    // Получить залогиненого пользователя
+//    @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
+//    fun getLoggedInUser(): Flow<UserEntity?>
+//
+//    @Query("UPDATE users SET name = :name WHERE userId = :userId")
+//    suspend fun updateUserName(name: String, userId: Int)
+//
+//    @Query("UPDATE users SET surname = :surname WHERE userId = :userId")
+//    suspend fun updateUserSurname(surname: String, userId: Int)
+//
+//    @Query("UPDATE users SET email = :email WHERE userId = :userId")
+//    suspend fun updateUserEmail(email: String, userId: Int)
+//
+//    @Query("UPDATE users SET hashedPassword = :password WHERE userId = :userId")
+//    suspend fun updateUserPassword(password: String, userId: Int)
+//}
+
 @Dao
 interface UserDao {
+    @Query("SELECT * FROM users LIMIT 1")
+    fun getUser(): Flow<UserEntity?>
 
-    // Добавить пользователя
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(user: UserEntity)
+    suspend fun insertUser(user: UserEntity)
 
-    // Получить пользователя по почте
-    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
-    suspend fun getUserByEmail(email: String): UserEntity?
+    @Query("UPDATE users SET name = :name")
+    suspend fun updateUserName(name: String)
 
-    // Установить пользователя как залогиненого по почте
-    @Query("UPDATE users SET isLoggedIn = :isLoggedIn WHERE email = :email")
-    suspend fun updateIsLoggedIn(isLoggedIn: Boolean, email: String)
+    @Query("UPDATE users SET surname = :surname")
+    suspend fun updateUserSurname(surname: String)
 
-    // Получить залогиненого пользователя
-    @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
-    fun getLoggedInUser(): Flow<UserEntity?>
+    @Query("UPDATE users SET email = :email")
+    suspend fun updateUserEmail(email: String)
 
-    @Query("UPDATE users SET name = :name WHERE userId = :userId")
-    suspend fun updateUserName(name: String, userId: Int)
-
-    @Query("UPDATE users SET surname = :surname WHERE userId = :userId")
-    suspend fun updateUserSurname(surname: String, userId: Int)
-
-    @Query("UPDATE users SET email = :email WHERE userId = :userId")
-    suspend fun updateUserEmail(email: String, userId: Int)
-
-    @Query("UPDATE users SET hashedPassword = :password WHERE userId = :userId")
-    suspend fun updateUserPassword(password: String, userId: Int)
+    @Query("DELETE FROM users")
+    suspend fun deleteUser()
 }

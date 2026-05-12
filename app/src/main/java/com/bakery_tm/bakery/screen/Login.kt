@@ -86,7 +86,7 @@ fun LoginScreen(
             when (event) {
                 NavigationEvent.NavigateToFood -> {
                     shoppingCartViewModel.getShoppingCart()
-                    orderViewModel.getOrders()
+//                    orderViewModel.getOrders()
                     onFoodNavigation()
                 }
                 NavigationEvent.NavigateToRegister -> onSignUpClick()
