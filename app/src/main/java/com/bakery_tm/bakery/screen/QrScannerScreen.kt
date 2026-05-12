@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -140,7 +141,6 @@ fun CameraScreen(onEmailScanned: (String) -> Unit, onCameraReady: () -> Unit) {
                 }
             }
         }
-
         cameraPermissionState.status.shouldShowRationale -> {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -154,15 +154,17 @@ fun CameraScreen(onEmailScanned: (String) -> Unit, onCameraReady: () -> Unit) {
                 }
             }
         }
-
         else -> {
-            // Первый запуск или пользователь отклонил
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Разрешение камеры не предоставлено. Для работы приложения разрешите доступ")
+                Text(
+                    //modifier = Modifier.fillMaxSize(),
+                    text = "Разрешение камеры не предоставлено. Для работы приложения разрешите доступ",
+                    textAlign = TextAlign.Center
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Button({ cameraPermissionState.launchPermissionRequest() }) {
                     Text("Разрешить доступ")

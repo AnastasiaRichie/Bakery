@@ -15,7 +15,8 @@ fun ProductEntity.toDomain(): ProductDomainModel{
         allergens = allergens,
         price = price,
         productType = productType.name.uppercase(),
-        productImageName = productImageName
+        productImageName = productImageName,
+        isActive = isActive,
     )
 }
 
@@ -29,7 +30,8 @@ fun ProductDomainModel.toEntity(): ProductEntity{
         allergens = allergens,
         price = price,
         productType = ProductType.valueOf(productType),
-        productImageName = productImageName
+        productImageName = productImageName,
+        isActive = isActive,
     )
 }
 

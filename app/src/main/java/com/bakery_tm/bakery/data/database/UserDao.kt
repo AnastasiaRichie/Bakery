@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.bakery_tm.bakery.data.database.entity.UserEntity
+import com.bakery_tm.bakery.models.UserType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -26,6 +27,9 @@ interface UserDao {
 
     @Query("UPDATE users SET email = :email")
     suspend fun updateUserEmail(email: String)
+
+    @Query("UPDATE users SET userType = :userType")
+    suspend fun updateUserType(userType: UserType)
 
     @Query("DELETE FROM users")
     suspend fun deleteUser()

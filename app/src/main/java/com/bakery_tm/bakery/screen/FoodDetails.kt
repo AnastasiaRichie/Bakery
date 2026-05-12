@@ -165,58 +165,55 @@ fun FoodDetailsScreenUi(
                 item { AllergensSection(model.allergens, darkTheme) }
                 item { Spacer(Modifier.height(20.dp)) }
             }
-
-
-
-            if (count != 0) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            if (isLoggedIn) {
+                if (count != 0) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Primary,
+                                contentColor = BackgroundLight
+                            ),
+                            onClick = {
+                                count--
+                                onQuantityChanged(false)
+                            }, enabled = isActive
+                        ) { Text("-") }
+                        Text(count.toString())
+                        Button(
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Primary,
+                                contentColor = BackgroundLight
+                            ),
+                            onClick = {
+                                count++
+                                onQuantityChanged(true)
+                            }, enabled = isActive
+                        ) { Text("+") }
+                    }
+                } else {
                     Button(
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Primary,
-                            contentColor = BackgroundLight
-                        ),
-                        onClick = {
-                            count--
-                            onQuantityChanged(false)
-                        }, enabled = isActive
-                    ) { Text("-") }
-                    Text(count.toString())
-                    Button(
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Primary,
-                            contentColor = BackgroundLight
-                        ),
                         onClick = {
                             count++
-                            onQuantityChanged(true)
-                        }, enabled = isActive
-                    ) { Text("+") }
+                            onAddClicked()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary,
+                            contentColor = BackgroundLight
+                        ),
+                        enabled = isActive,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) { Text("Добавить в корзину") }
                 }
-            } else {
-                Button(
-                    onClick = {
-                        count++
-                        onAddClicked()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Primary,
-                        contentColor = BackgroundLight
-                    ),
-                    enabled = isActive,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) { Text("Добавить в корзину") }
             }
         }
-
-
     }
 }
 

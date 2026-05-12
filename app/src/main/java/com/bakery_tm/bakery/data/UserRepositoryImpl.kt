@@ -49,7 +49,7 @@ class UserRepositoryImpl(
     override suspend fun register(model: UserStateModel) {
         try {
             val tokenResponse = loginApi.register(model.toApi())
-            userDao.insertUser(model.toEntity().copy(userId = tokenResponse.userId))
+            userDao.insertUser(model.toEntity().copy(userId = tokenResponse.userId, userType = tokenResponse.userType))
             authManager.saveToken(tokenResponse.token)
         } catch (e: HttpException) {
             throw Exception(errorHandler.parseError(e))
@@ -69,10 +69,11 @@ class UserRepositoryImpl(
     override suspend fun updateUser(name: String?, lastName: String?, email: String?, password: String?) {
         try {
             if (name == null && lastName == null && email == null && password == null) return
-            orderApi.updateUser(UpdateUserRequest(name, lastName, email, password))
+            val user = orderApi.updateUser(UpdateUserRequest(name, lastName, email, password))
             name?.let { userDao.updateUserName(it) }
             lastName?.let { userDao.updateUserSurname(it) }
             email?.let { userDao.updateUserEmail(it) }
+            userDao.updateUserType(user.userType)
         } catch (e: HttpException) {
             throw Exception(errorHandler.parseError(e))
         } catch (e: IOException) {

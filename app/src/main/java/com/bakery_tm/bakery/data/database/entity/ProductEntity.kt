@@ -16,4 +16,5 @@ data class ProductEntity(
     val allergens: List<String>,
     val productType: ProductType,
     val productImageName: String,
+    val isActive: Boolean,
 )

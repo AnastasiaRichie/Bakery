@@ -22,9 +22,16 @@ class FoodRepositoryImpl(private val productDao: ProductDao, private val foodApi
                 emit(productDao.getAllProducts().map { it.toDomain() })
                 val products = foodApi.getProducts()
                 productDao.insertAllProducts(products.map { it.toEntity() })
+                emit(products)
             }
         } catch (e: IOException) {
             emit(emptyList())
         }
+    }
+
+    override suspend fun removeProduct(productId: Long): List<ProductDomainModel> {
+        val updatedProducts = foodApi.removeProduct(productId)
+        productDao.insertAllProducts(updatedProducts.map { it.toEntity() })
+        return updatedProducts
     }
 }

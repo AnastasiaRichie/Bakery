@@ -53,4 +53,14 @@ class FoodViewModel(
             _selected.emit(food)
         }
     }
+
+    fun removeProduct(productId: Long) {
+        viewModelScope.launch {
+            try {
+                val newProducts = foodRepository.removeProduct(productId)
+                _state.emit(newProducts.map { it.toModel() })
+            } catch (e: Exception) {
+            }
+        }
+    }
 }

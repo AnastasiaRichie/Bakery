@@ -26,7 +26,7 @@ data class RegisterRequest(
     val email: String,
     val password: String,
 )
-data class TokenResponse(val token: String, val userId: Int)
+data class TokenResponse(val token: String, val userId: Int, val userType: UserType)
 
 data class UserResponse(
     val token: String? = null,

@@ -2,7 +2,6 @@ package com.bakery_tm.bakery
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.WindowInsets
@@ -38,6 +37,7 @@ import com.bakery_tm.bakery.common.BorderDark
 import com.bakery_tm.bakery.domain.AuthState
 import com.bakery_tm.bakery.models.UserType
 import com.bakery_tm.bakery.screen.AdminFoodEditorScreen
+import com.bakery_tm.bakery.screen.EditFoodScreen
 import com.bakery_tm.bakery.screen.EditProfileScreen
 import com.bakery_tm.bakery.screen.FoodDetailsScreen
 import com.bakery_tm.bakery.screen.FoodScreen
@@ -244,14 +244,19 @@ fun AppNavigation(
                         )
                         4 -> {
                             when (userType) {
-                                UserType.ADMIN -> {
+                                UserType.MANAGER -> {
                                     QrScannerScreen(
                                         modifier = Modifier.padding(innerPadding),
                                         viewModel = ordersViewModel
                                     )
                                 }
-                                UserType.MANAGER -> {
-                                    AdminFoodEditorScreen(modifier = Modifier.padding(innerPadding))
+                                UserType.ADMIN -> {
+                                    AdminFoodEditorScreen(
+                                        modifier = Modifier.padding(innerPadding),
+                                        viewModel = foodViewModel,
+                                        darkTheme = darkTheme,
+                                        onEditProductNavigate = { navController.navigate(editProduct(it)) }
+                                    )
                                 }
                                 else -> Unit
                             }
@@ -313,6 +318,25 @@ fun AppNavigation(
                     Toast.makeText(context, "Screen not found", Toast.LENGTH_SHORT).show()
                 }
             }
+            composable(
+                EDIT_FOOD,
+                arguments = listOf(navArgument(PRODUCT_ID) { type = NavType.LongType })
+            ) {
+                val productId = it.arguments?.getLong(PRODUCT_ID)
+                productId?.let {
+                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                        EditFoodScreen(
+                            viewModel = foodViewModel,
+                            shoppingCartViewModel = shoppingCartViewModel,
+                            modifier = Modifier.padding(innerPadding),
+                            darkTheme = darkTheme,
+                            productId = productId
+                        ) { navController.popBackStack() }
+                    }
+                } ?: run {
+                    Toast.makeText(context, "Screen not found", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 }
@@ -325,9 +349,10 @@ const val PRODUCT_ID = "productId"
 const val ORDER_ID = "orderId"
 const val ORDER_INDEX = "orderIndex"
 const val FOOD_DETAILS = "food/{productId}"
+const val EDIT_FOOD = "edit/{productId}"
 const val EDIT = "edit"
 const val HISTORY_DETAILS = "history/{orderId}/{orderIndex}"
 
 fun foodDetails(productId: Long) = "food/$productId"
-fun editType(type: String) = "edit/$type"
+fun editProduct(productId: Long) = "edit/$productId"
 fun historyDetails(orderId: Long, index: Int) = "history/$orderId/$index"

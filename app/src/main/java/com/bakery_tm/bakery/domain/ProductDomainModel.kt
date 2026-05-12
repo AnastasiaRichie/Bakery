@@ -12,4 +12,5 @@ data class ProductDomainModel(
     val price: String,
     val productImageName: String,
     val productType: String = ProductType.FLOUR.name,
+    val isActive: Boolean,
 )
