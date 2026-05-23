@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -43,11 +45,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -159,6 +164,8 @@ fun LoginScreenUi(
     onPasswordChanged: (String) -> Unit,
     onShowPasswordChanged: (Boolean) -> Unit,
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -227,6 +234,10 @@ fun LoginScreenUi(
                     value = userStateModel.password,
                     onValueChange = { onPasswordChanged(it) },
                     show = showPassword,
+                    onDone = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    },
                     onToggle = { onShowPasswordChanged(!showPassword) }
                 )
                 TextButton(
@@ -316,6 +327,7 @@ fun InputField(label: String, value: String, onValueChange: (String) -> Unit) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
         Text(label, fontWeight = FontWeight.SemiBold)
         OutlinedTextField(
+            singleLine = true,
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth()
@@ -324,12 +336,18 @@ fun InputField(label: String, value: String, onValueChange: (String) -> Unit) {
 }
 
 @Composable
-fun PasswordField(value: String, onValueChange: (String) -> Unit, show: Boolean, onToggle: () -> Unit) {
+fun PasswordField(value: String, onValueChange: (String) -> Unit, show: Boolean, onDone: () -> Unit, onToggle: () -> Unit) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
         Text("Пароль", fontWeight = FontWeight.SemiBold)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
+            singleLine = true,
+            maxLines = 1,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                onDone()
+            }),
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = if (show) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {

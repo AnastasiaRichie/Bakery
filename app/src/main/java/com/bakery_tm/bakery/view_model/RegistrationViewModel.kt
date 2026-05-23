@@ -7,6 +7,7 @@ import com.bakery_tm.bakery.domain.UserRepository
 import com.bakery_tm.bakery.models.EmptyFieldException
 import com.bakery_tm.bakery.models.FieldType
 import com.bakery_tm.bakery.models.NavigationEvent
+import com.bakery_tm.bakery.models.SimplePasswordException
 import com.bakery_tm.bakery.models.UserStateModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,6 +47,7 @@ class RegistrationViewModel(
         viewModelScope.launch {
             try {
                 if (model.email.isEmpty() || model.name.isEmpty() || model.password.isEmpty()) throw EmptyFieldException()
+                if (model.password.length < 6) throw SimplePasswordException()
                 userRepository.register(model)
             } catch (e: ConnectException) {
                 _events.emit(NavigationEvent.ShowError("Подключите интернет для продолжения работы"))

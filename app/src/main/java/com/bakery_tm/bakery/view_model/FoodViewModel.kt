@@ -33,13 +33,13 @@ class FoodViewModel(
             _error.emit(null)
             foodRepository
                 .getProducts()
-                .catch {
+                .catch { e ->
                     _error.emit("")
                 }
-                .collect {
-                    if (it.isNotEmpty()) {
+                .collect { products ->
+                    if (products.isNotEmpty()) {
                         _error.emit(null)
-                        _state.emit(it.map { it.toModel() })
+                        _state.emit(products.map { it.toModel() })
                     } else {
                         _error.emit("")
                     }

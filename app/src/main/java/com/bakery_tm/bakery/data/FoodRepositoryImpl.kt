@@ -25,7 +25,7 @@ class FoodRepositoryImpl(private val productDao: ProductDao, private val foodApi
                 emit(products)
             }
         } catch (e: IOException) {
-            emit(emptyList())
+            emit(productDao.getAllProducts().map { it.toDomain() }.orEmpty())
         }
     }
 

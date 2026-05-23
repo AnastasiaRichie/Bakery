@@ -38,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -144,7 +146,8 @@ fun RegistrationScreenUi(
     showPassword: Boolean,
     onShowChanged: (Boolean) -> Unit,
 ) {
-
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     Box(modifier = modifier.fillMaxSize().background(background)) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             if (!isConnected) {
@@ -184,6 +187,10 @@ fun RegistrationScreenUi(
                 value = userStateModel.password,
                 onValueChange = { onPasswordChanged(it) },
                 show = showPassword,
+                onDone = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                },
                 onToggle = { onShowChanged(!showPassword) }
             )
 
