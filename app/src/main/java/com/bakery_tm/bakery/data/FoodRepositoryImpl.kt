@@ -34,4 +34,10 @@ class FoodRepositoryImpl(private val productDao: ProductDao, private val foodApi
         productDao.insertAllProducts(updatedProducts.map { it.toEntity() })
         return updatedProducts
     }
+
+    override suspend fun returnBackProduct(productId: Long): List<ProductDomainModel> {
+        val updatedProducts = foodApi.returnBackProduct(productId)
+        productDao.insertAllProducts(updatedProducts.map { it.toEntity() })
+        return updatedProducts
+    }
 }

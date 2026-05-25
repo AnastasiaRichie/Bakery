@@ -57,7 +57,7 @@ val appModule = module {
     single { get<BakeryDatabase>().cartDao() }
     single<UserRepository> { UserRepositoryImpl(get(), get(), get(), get(), get()) }
     single<FoodRepository> { FoodRepositoryImpl(get(), get()) }
-    single<OrderRepository> { OrderRepositoryImpl(get(), get(), get()) }
+    single<OrderRepository> { OrderRepositoryImpl(get(), get(), get(), get(), get()) }
     single<ShoppingCartRepository> { ShoppingCartRepositoryImpl(get(), get()) }
     single { AvatarPreferences(androidContext()) }
     single { provideEncryptedPrefs(get()) }

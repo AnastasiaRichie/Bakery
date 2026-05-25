@@ -18,6 +18,9 @@ interface CartDao {
     @Query("DELETE FROM cart_items WHERE cartItemId = :cartItemId")
     suspend fun deleteCartItem(cartItemId: Long)
 
+    @Query("DELETE FROM cart_items WHERE productId = :productId")
+    suspend fun deleteByProductId(productId: Long)
+
     @Query("SELECT * FROM cart_items WHERE productId = :productId")
     fun getCart(productId: Long): Flow<CartItemEntity>
 

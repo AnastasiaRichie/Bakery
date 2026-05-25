@@ -36,6 +36,9 @@ class OrderViewModel(
     private val _onBack = MutableSharedFlow<Unit>()
     val onBack: SharedFlow<Unit> = _onBack
 
+    private val _showUnavailableProduct = MutableSharedFlow<String>()
+    val showUnavailableProduct: SharedFlow<String> = _showUnavailableProduct
+
     init {
         webSocketManager.attachOrderListener(this)
         viewModelScope.launch {
@@ -83,6 +86,8 @@ class OrderViewModel(
             localUser?.userId?.let {
                 try {
                     orderRepository.createOrder(it, address)
+                } catch (e: Exception) {
+                    _showUnavailableProduct.emit(e.message.orEmpty())
                 } finally {
                     getAllOrders(it)
                 }
@@ -98,9 +103,13 @@ class OrderViewModel(
     }
 
     fun reorder(orderId: Long) {
+
+
         viewModelScope.launch {
             try {
                 orderRepository.reorder(orderId)
+            } catch (e: Exception) {
+                _showUnavailableProduct.emit(e.message.orEmpty())
             } finally {
                 localUser?.userId?.let { getAllOrders(it) }
                 _onBack.emit(Unit)

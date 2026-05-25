@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -67,17 +68,18 @@ fun ForgotPasswordScreen(
     onBackClicked: () -> Unit
 ) {
     val background = if (darkTheme) BackgroundDark else BackgroundLight
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) {}
 
-    LaunchedEffect(Unit) {
-        launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
     val context = LocalContext.current
     val viewModel = koinViewModel<ForgotPasswordViewModel>()
     val state by viewModel.email.collectAsState()
     val userNotExistsEvent by viewModel.userNotExistsEvent.collectAsState(false)
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.isEmailExists()
+        }
+    }
     LaunchedEffect(Unit) {
         viewModel.sendNotification.collect { pass ->
             showCopyNotification(context, pass)
@@ -91,7 +93,13 @@ fun ForgotPasswordScreen(
         userNotExistsEvent = userNotExistsEvent,
         background = background,
         onEmailChanged = { email -> viewModel.onEmailChanged(email) },
-        onSendClick = { viewModel.isEmailExists() },
+        onSendClick = {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                viewModel.isEmailExists()
+            }
+        },
         onBack = onBackClicked,
     )
 }

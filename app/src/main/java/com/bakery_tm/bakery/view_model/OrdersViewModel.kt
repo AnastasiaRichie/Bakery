@@ -18,7 +18,21 @@ class OrdersViewModel(
     private val _orders = MutableStateFlow<List<OrderResponse>>(emptyList())
     val orders: StateFlow<List<OrderResponse>> = _orders.asStateFlow()
 
+    private val _allOrders = MutableStateFlow<List<OrderResponse>>(emptyList())
+    val allOrders: StateFlow<List<OrderResponse>> = _allOrders.asStateFlow()
+
     private var email: String? = null
+
+    fun getAllOrders() {
+        viewModelScope.launch {
+            try {
+                val orders = orderRepository.getAllOrders()
+                _allOrders.value = orders
+            } catch (e: Exception) {
+                Log.e("OrdersViewModel", "Failed to fetch all orders", e)
+            }
+        }
+    }
 
     fun fetchOrdersByEmail(email: String) {
         this.email = email

@@ -12,4 +12,11 @@ interface FoodApi {
 
     @POST("product/{id}")
     suspend fun removeProduct(@Path("id") productId: Long): List<ProductDomainModel>
+
+    @POST("product/{id}/add")
+    suspend fun returnBackProduct(@Path("id") productId: Long): List<ProductDomainModel>
+
+
+    @GET("/products-unavailable")
+    suspend fun getUnavailableProductIds(): List<Long>
 }

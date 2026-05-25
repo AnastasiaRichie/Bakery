@@ -13,6 +13,8 @@ interface OrderRepository {
 
     suspend fun calculateOrderTotal(orderId: Long, items: List<OrderResponseItem>): Double
 
+    suspend fun getAllOrders(): List<OrderResponse>
+
     suspend fun getOrdersByEmail(email: String): List<OrderResponse>
 
     suspend fun markOrderReceived(orderId: Long)

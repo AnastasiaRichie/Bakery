@@ -246,7 +246,7 @@ fun LoginScreenUi(
                         .align(Alignment.End)
                         .padding(end = 16.dp)
                 ) { Text("Забыли пароль?", color = Primary) }
-                PrimaryButton("Войти") {
+                PrimaryButton("Войти", userStateModel.email.isNotEmpty() && userStateModel.password.isNotEmpty()) {
                     onLoginClick(userStateModel.email, userStateModel.password)
                 }
                 OutlinedButton(
@@ -360,8 +360,9 @@ fun PasswordField(value: String, onValueChange: (String) -> Unit, show: Boolean,
 }
 
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit) {
+fun PrimaryButton(text: String, enabled: Boolean, onClick: () -> Unit) {
     Button(
+        enabled = enabled,
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = BackgroundLight),
         modifier = Modifier

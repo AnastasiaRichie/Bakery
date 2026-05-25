@@ -3,6 +3,7 @@ package com.bakery_tm.bakery.screen
 import android.Manifest
 import android.annotation.SuppressLint
 import android.util.Log
+import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -10,6 +11,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,10 +23,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,11 +37,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.bakery_tm.bakery.R
+import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.domain.OrderResponse
 import com.bakery_tm.bakery.domain.OrderState
 import com.bakery_tm.bakery.view_model.OrdersViewModel
@@ -55,52 +63,62 @@ import kotlinx.serialization.json.Json
 import java.util.Date
 
 @Composable
-fun QrScannerScreen(modifier: Modifier, viewModel: OrdersViewModel) {
-    var scannedEmail by remember { mutableStateOf<String?>(null) }
-    if (scannedEmail == null) {
-        CameraScreen({
-            scannedEmail = it
-            viewModel.fetchOrdersByEmail(it)
-        }) {}
-    } else {
-        val orders by viewModel.orders.collectAsState(emptyList())
-        OrdersList(
-            modifier = modifier,
-            orders = orders,
-            onBackClicked = { scannedEmail = null },
-            onOrderReceived = { orderId -> viewModel.markOrderReceived(orderId) }
-        )
-    }
-}
-
-
-@Composable
 fun OrdersList(
     modifier: Modifier,
     orders: List<OrderResponse>,
-    onBackClicked: () -> Unit,
+    showScanButton: Boolean = false,
+    onScanClicked: () -> Unit = {},
+    onBackClicked: () -> Unit = {},
     onOrderReceived: (Long) -> Unit,
 ) {
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        LazyColumn(modifier = Modifier.fillMaxSize().weight(1f)) {
-            items(orders, key = { it.orderId }) { order ->
-                OrderCard(order = order, onMarkReceived = { onOrderReceived(it.orderId) })
-                Spacer(modifier = Modifier.height(8.dp))
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
+        if (orders.isEmpty()) {
+            Column(modifier.fillMaxSize()) {
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "Заказы отсуствуют",
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.weight(1f))
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                LazyColumn(modifier = Modifier.fillMaxSize().weight(1f)) {
+                    items(orders, key = { it.orderId }) { order ->
+                        OrderCard(
+                            order = order,
+                            shouldShowMarkButton = !showScanButton,
+                            onMarkReceived = { onOrderReceived(it.orderId) })
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+                if (!showScanButton) {
+                    Button(onBackClicked, modifier = Modifier.fillMaxWidth()) {
+                        Text("Назад")
+                    }
+                }
             }
         }
-        Button(onBackClicked, modifier = Modifier.fillMaxWidth()) {
-            Text("Назад")
+        if (showScanButton) {
+            FloatingActionButton(onScanClicked, modifier = Modifier.padding(12.dp)) {
+                Icon(painterResource(R.drawable.ic_scanner), contentDescription = null)
+            }
         }
     }
 }
 
 @Composable
-fun OrderCard(order: OrderResponse, onMarkReceived: (OrderResponse) -> Unit) {
+fun OrderCard(order: OrderResponse, shouldShowMarkButton: Boolean, onMarkReceived: (OrderResponse) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Заказ #${order.orderId}", style = MaterialTheme.typography.titleMedium)
-            Text("Адрес: ${order.address.city}, ${order.address.address}")
-            Text("Дата: ${Date(order.date).toLocaleString()}")
+            if (shouldShowMarkButton) {
+                Text("Адрес: ${order.address.city}, ${order.address.address}")
+                Text("Дата: ${Date(order.date).toLocaleString()}")
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -108,13 +126,13 @@ fun OrderCard(order: OrderResponse, onMarkReceived: (OrderResponse) -> Unit) {
                 order.items.forEach { item -> Text("${item.quantity} x ${item.product.name}") }
             }
 
-            if (order.orderState == OrderState.ORDERED) {
+            if (order.orderState == OrderState.ORDERED && shouldShowMarkButton) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { onMarkReceived(order) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50), contentColor = Color.Black)
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = Color.White)
                 ) {
-                    Text("Забрал заказ")
+                    Text("Выдан")
                 }
             }
         }
@@ -123,13 +141,9 @@ fun OrderCard(order: OrderResponse, onMarkReceived: (OrderResponse) -> Unit) {
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraScreen(onEmailScanned: (String) -> Unit, onCameraReady: () -> Unit) {
+fun CameraScreen(onEmailScanned: (String) -> Unit) {
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
-    LaunchedEffect(key1 = cameraPermissionState.status) {
-        if (cameraPermissionState.status.isGranted) {
-            onCameraReady()
-        }
-    }
+    val context = LocalContext.current
     when {
         cameraPermissionState.status.isGranted -> {
             QrScannerScreenUi {
@@ -137,6 +151,7 @@ fun CameraScreen(onEmailScanned: (String) -> Unit, onCameraReady: () -> Unit) {
                     val payload = Json.decodeFromString<QrPayload>(it)
                     onEmailScanned(payload.token)
                 } catch (e: Exception) {
+                    Toast.makeText(context, "Ошибка при парсинге QR!", Toast.LENGTH_SHORT).show()
                     Log.e("Exception", "Ошибка при парсинге QR: ${e.message}")
                 }
             }

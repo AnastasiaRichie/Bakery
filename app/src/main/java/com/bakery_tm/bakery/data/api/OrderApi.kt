@@ -27,6 +27,9 @@ interface OrderApi {
     @PATCH("update-user")
     suspend fun updateUser(@Body request: UpdateUserRequest): UserResponse
 
+    @GET("all-orders")
+    suspend fun getAllOrders(): List<OrderResponse>
+
     @GET("ordersByEmail")
     suspend fun getOrdersByEmail(
         @Query("email") email: String

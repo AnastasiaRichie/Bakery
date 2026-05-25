@@ -39,9 +39,11 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -86,6 +88,9 @@ fun FoodScreen(
     val cartItems by shoppingCartViewModel.cartItems.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.getProducts()
+    }
     FoodScreenUi(
         modifier = modifier,
         foodList = foodList,
@@ -121,9 +126,10 @@ fun FoodScreenUi(
 ) {
     val background = if (darkTheme) BackgroundDark else BackgroundLight
     var selectedTab by remember { mutableIntStateOf(0) }
+    var enteredValue by remember { mutableStateOf("") }
     Box(modifier.fillMaxSize().background(background)) {
         Column {
-            DashboardTopBar(isLoggedIn, darkTheme, user, avatar)
+            DashboardTopBar(isLoggedIn, darkTheme, user, avatar, enteredValue) { enteredValue = it }
             if (!isLoggedIn) { ProductGuestBanner(onRegisterClicked) }
             val tabs = listOf("Все", "Еда", "Напитки")
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp, horizontal = 16.dp)) {
@@ -182,9 +188,9 @@ fun FoodScreenUi(
                 ) {
                     items(
                         items = when (selectedTab) {
-                            0 -> foodList
-                            1 -> foodList.filter { it.productType == ProductType.FLOUR }
-                            2 -> foodList.filter { it.productType == ProductType.DRINK }
+                            0 -> foodList.filter { it.name.contains(enteredValue, ignoreCase = true) }
+                            1 -> foodList.filter { it.name.contains(enteredValue, ignoreCase = true) }.filter { it.productType == ProductType.FLOUR }
+                            2 -> foodList.filter { it.name.contains(enteredValue, ignoreCase = true) }.filter { it.productType == ProductType.DRINK }
                             else -> foodList
                         }) {
                         ProductCard(
@@ -217,7 +223,9 @@ fun ProductCard(
     }
     val added = cartItems.any { it.product.productId == product.productId }
     Column(modifier = Modifier.clickable { onProductClicked(product.productId) }) {
-        Box(modifier = Modifier.aspectRatio(4f / 3f).clip(RoundedCornerShape(16.dp))) {
+        Box(modifier = Modifier
+            .aspectRatio(4f / 3f)
+            .clip(RoundedCornerShape(16.dp))) {
             if (foodIconRes != 0) {
                 Image(
                     painter = painterResource(foodIconRes),
@@ -239,7 +247,7 @@ fun ProductCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.name, fontWeight = FontWeight.Bold)
                 Text(product.description, fontSize = 12.sp, color = Color.Gray)
-                Text(product.price, color = Primary, fontWeight = FontWeight.Bold)
+                Text( "${product.price} BYN", color = Primary, fontWeight = FontWeight.Bold)
             }
             if (isLoggedIn) {
                 IconButton(
@@ -313,10 +321,11 @@ fun ProductGuestBanner(onRegisterClick: () -> Unit) {
 }
 
 @Composable
-fun SearchBar() {
+fun SearchBar(enteredValue: String, onValueChange: (String) -> Unit) {
     OutlinedTextField(
-        value = "",
-        onValueChange = {},
+        value = enteredValue,
+        onValueChange = onValueChange,
+        singleLine = true,
         placeholder = { Text("Найти кофе и снэки...") },
         leadingIcon = { Icon(Icons.Default.Search, null) },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -325,7 +334,14 @@ fun SearchBar() {
 }
 
 @Composable
-fun DashboardTopBar(isLoggedIn: Boolean, darkTheme: Boolean, user: String, avatar: ProfileAvatar) {
+fun DashboardTopBar(
+    isLoggedIn: Boolean,
+    darkTheme: Boolean,
+    user: String,
+    avatar: ProfileAvatar,
+    enteredValue: String,
+    onValueChange: (String) -> Unit
+) {
     val greeting = remember { getGreeting() }
     Column {
         Row(
@@ -356,6 +372,6 @@ fun DashboardTopBar(isLoggedIn: Boolean, darkTheme: Boolean, user: String, avata
                 Icon(Icons.Default.Notifications, null)
             }
         }
-        SearchBar()
+        SearchBar(enteredValue, onValueChange)
     }
 }

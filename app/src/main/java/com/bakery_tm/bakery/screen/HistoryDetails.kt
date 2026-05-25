@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,11 +31,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,12 +73,31 @@ fun HistoryDetailsScreen(
     onBackClicked: () -> Unit
 ) {
     val order by viewModel.order.collectAsState()
+    var showDialog by remember { mutableStateOf("") }
     viewModel.getDetailedOrder(orderId)
     LaunchedEffect(Unit) {
         viewModel.onBack.collect {
             onBackClicked()
         }
     }
+    LaunchedEffect(Unit) {
+        viewModel.showUnavailableProduct.collect { showDialog = it }
+    }
+    if (showDialog.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { showDialog = "" },
+            title = {
+                Text("Ошибка заказа")
+            },
+            text = { Text(showDialog) },
+            confirmButton = {
+                TextButton(onClick = { showDialog = "" }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
     if (order == null) {
         LoadingScreen()
     } else {
@@ -102,9 +125,13 @@ fun HistoryDetailsUi(
     onBackClicked: () -> Unit,
 ) {
     val background = if (darkTheme) BackgroundDark else BackgroundLight
-    Column(modifier = modifier.fillMaxSize().background(background)) {
+    Column(modifier = modifier
+        .fillMaxSize()
+        .background(background)) {
         OrderDetailsTopBar(index, onBackClicked, order.orderState, darkTheme)
-        LazyColumn(modifier = Modifier.padding(horizontal = 16.dp).weight(1f)) {
+        LazyColumn(modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .weight(1f)) {
             item {
                 Column {
                     Spacer(Modifier.height(12.dp))

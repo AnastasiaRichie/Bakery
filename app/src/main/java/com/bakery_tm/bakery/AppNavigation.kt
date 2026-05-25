@@ -45,8 +45,8 @@ import com.bakery_tm.bakery.screen.ForgotPasswordScreen
 import com.bakery_tm.bakery.screen.HistoryDetailsScreen
 import com.bakery_tm.bakery.screen.HistoryScreen
 import com.bakery_tm.bakery.screen.LoginScreen
+import com.bakery_tm.bakery.screen.ManagerFoodScannerScreen
 import com.bakery_tm.bakery.screen.ProfileScreen
-import com.bakery_tm.bakery.screen.QrScannerScreen
 import com.bakery_tm.bakery.screen.RegistrationScreen
 import com.bakery_tm.bakery.screen.ShoppingCartScreen
 import com.bakery_tm.bakery.screen.SplashScreen
@@ -245,7 +245,7 @@ fun AppNavigation(
                         4 -> {
                             when (userType) {
                                 UserType.MANAGER -> {
-                                    QrScannerScreen(
+                                    ManagerFoodScannerScreen(
                                         modifier = Modifier.padding(innerPadding),
                                         viewModel = ordersViewModel
                                     )

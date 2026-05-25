@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,7 +37,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -77,6 +80,24 @@ fun ShoppingCartScreen(
     val cartItems by viewModel.cartItems.collectAsState()
     val cartSum by viewModel.cartSum.collectAsState()
     val background = if (darkTheme) BackgroundDark else BackgroundLight
+    var showDialog by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        orderViewModel.showUnavailableProduct.collect { showDialog = it }
+    }
+    if (showDialog.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { showDialog = "" },
+            title = {
+                Text("Ошибка заказа")
+            },
+            text = { Text(showDialog) },
+            confirmButton = {
+                TextButton(onClick = { showDialog = "" }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
     ShoppingCartScreenUi(
         modifier = modifier,
         cartItems = cartItems,
@@ -377,7 +398,7 @@ fun CartItemRow(
                         )
                         Text(item.product.description, fontSize = 13.sp, color = Color.Gray)
                     }
-                    Text(item.product.price, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text("${item.product.price} BYN", fontWeight = FontWeight.Bold, maxLines = 1)
                 }
             }
             Row(

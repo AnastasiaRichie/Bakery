@@ -21,14 +21,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,6 +66,24 @@ fun HistoryScreen(
     onOrderClicked: (Long, Int) -> Unit
 ) {
     val orders by viewModel.orders.collectAsState()
+    var showDialog by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        viewModel.showUnavailableProduct.collect { showDialog = it }
+    }
+    if (showDialog.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { showDialog = "" },
+            title = {
+                Text("Ошибка заказа")
+            },
+            text = { Text(showDialog) },
+            confirmButton = {
+                TextButton(onClick = { showDialog = "" }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 
     when {
         !isLoggedIn -> UnregisteredScreenUi(modifier, darkTheme, onLoginClicked)

@@ -129,7 +129,7 @@ fun ProfileScreenUi(
             Spacer(Modifier.height(24.dp))
             OutlinedButton(
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Primary.copy(alpha = 0.6f),
+                    containerColor = Primary,
                     contentColor = Color.White
                 ),
                 onClick = onLogOutClicked,

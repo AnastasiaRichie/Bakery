@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlin.collections.filter
+import kotlin.collections.map
 
 class FoodViewModel(
     val foodRepository: FoodRepository,
@@ -17,6 +19,9 @@ class FoodViewModel(
 
     private val _state = MutableStateFlow<List<ProductModel>>(emptyList())
     val state: StateFlow<List<ProductModel>> = _state
+
+    private val _unavailableProducts = MutableStateFlow<List<ProductModel>>(emptyList())
+    val unavailableProducts: StateFlow<List<ProductModel>> = _unavailableProducts
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
@@ -39,7 +44,8 @@ class FoodViewModel(
                 .collect { products ->
                     if (products.isNotEmpty()) {
                         _error.emit(null)
-                        _state.emit(products.map { it.toModel() })
+                        _state.emit(products.filter { it.isActive }.map { it.toModel() })
+                        _unavailableProducts.emit(products.filter { !it.isActive }.map { it.toModel() })
                     } else {
                         _error.emit("")
                     }
@@ -58,7 +64,19 @@ class FoodViewModel(
         viewModelScope.launch {
             try {
                 val newProducts = foodRepository.removeProduct(productId)
-                _state.emit(newProducts.map { it.toModel() })
+                _state.emit(newProducts.filter { it.isActive }.map { it.toModel() })
+                _unavailableProducts.emit(newProducts.filter { !it.isActive }.map { it.toModel() })
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    fun returnBackProduct(productId: Long) {
+        viewModelScope.launch {
+            try {
+                val newProducts = foodRepository.returnBackProduct(productId)
+                _state.emit(newProducts.filter { it.isActive }.map { it.toModel() })
+                _unavailableProducts.emit(newProducts.filter { !it.isActive }.map { it.toModel() })
             } catch (e: Exception) {
             }
         }

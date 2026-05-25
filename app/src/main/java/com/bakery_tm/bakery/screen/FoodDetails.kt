@@ -151,7 +151,7 @@ fun FoodDetailsScreenUi(
                     Column(Modifier.padding(16.dp)) {
                         Text(model.name, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            model.price,
+                            "${model.price} BYN",
                             fontSize = 24.sp,
                             color = Primary,
                             fontWeight = FontWeight.Bold

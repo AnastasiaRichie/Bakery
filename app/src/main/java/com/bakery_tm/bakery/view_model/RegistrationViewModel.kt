@@ -35,6 +35,7 @@ class RegistrationViewModel(
             try {
                 if (email.isEmpty() || password.isEmpty()) throw EmptyFieldException()
                 userRepository.login(email, password)
+                _state.update { UserStateModel() }
             } catch (e: ConnectException) {
                 _events.emit(NavigationEvent.ShowError("Подключите интернет для продолжения работы"))
             } catch (e: Exception) {
@@ -49,6 +50,7 @@ class RegistrationViewModel(
                 if (model.email.isEmpty() || model.name.isEmpty() || model.password.isEmpty()) throw EmptyFieldException()
                 if (model.password.length < 6) throw SimplePasswordException()
                 userRepository.register(model)
+                _state.update { UserStateModel() }
             } catch (e: ConnectException) {
                 _events.emit(NavigationEvent.ShowError("Подключите интернет для продолжения работы"))
             } catch (e: Exception) {

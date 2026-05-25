@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bakery_tm.bakery.common.BackgroundDark
 import com.bakery_tm.bakery.common.BackgroundLight
+import com.bakery_tm.bakery.common.InputDark
 import com.bakery_tm.bakery.common.Primary
 import com.bakery_tm.bakery.common.Red
 import com.bakery_tm.bakery.models.ProductModel
@@ -50,6 +52,7 @@ fun AdminFoodEditorScreen(
     onEditProductNavigate: (Long) -> Unit,
 ) {
     val productList by viewModel.state.collectAsState()
+    val unavailableProducts by viewModel.unavailableProducts.collectAsState()
     val background = if (darkTheme) BackgroundDark else BackgroundLight
     val context = LocalContext.current
     Box(modifier = modifier.fillMaxSize().background(background)) {
@@ -70,6 +73,18 @@ fun AdminFoodEditorScreen(
                         onEditProductNavigate
                     )
                 }
+                item {
+                    Text("Удаленные товары")
+                }
+                items(unavailableProducts) { product ->
+                    FoodEditorItem(
+                        product,
+                        context,
+                        viewModel::returnBackProduct,
+                        onEditProductNavigate,
+                        isReturn = true,
+                    )
+                }
             }
         }
     }
@@ -79,8 +94,9 @@ fun AdminFoodEditorScreen(
 fun FoodEditorItem(
     product: ProductModel,
     context: Context,
-    onRemoveProduct: (Long) -> Unit,
+    onButtonClick: (Long) -> Unit,
     onEditProductNavigate: (Long) -> Unit,
+    isReturn: Boolean = false,
 ) {
     val foodIconRes = remember(product.productImageName) {
         context.resources.getIdentifier(product.productImageName, "drawable", context.packageName)
@@ -111,12 +127,18 @@ fun FoodEditorItem(
             Text(product.price, color = Primary, fontWeight = FontWeight.Bold)
         }
         IconButton(
-            onClick = { onRemoveProduct(product.productId) },
+            onClick = { onButtonClick(product.productId) },
             modifier = Modifier
                 .size(36.dp)
                 .align(Alignment.CenterVertically)
                 .padding(4.dp)
-        ) { Icon(Icons.Default.Delete, null, tint = Red) }
+        ) {
+            if (isReturn) {
+                Icon(Icons.Default.Refresh, null, tint = InputDark)
+            } else {
+                Icon(Icons.Default.Delete, null, tint = Red)
+            }
+        }
         IconButton(
             onClick = { onEditProductNavigate(product.productId) },
             modifier = Modifier
