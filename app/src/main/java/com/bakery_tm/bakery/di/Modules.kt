@@ -110,7 +110,7 @@ val appModule = module {
     viewModel { FoodViewModel(get()) }
     viewModel { UserViewModel(get(), get(), get()) }
     viewModel { OrderViewModel(get(), get(), get()) }
-    viewModel { OrdersViewModel(get()) }
+    viewModel { OrdersViewModel(get(), get()) }
     viewModel { ShoppingCartViewModel(get(), get()) }
     viewModel { ForgotPasswordViewModel(get()) }
     viewModel { MainViewModel(userRepository = get(), webSocketManager = get()) }
@@ -125,5 +125,5 @@ fun provideEncryptedPrefs(context: Context) =
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-const val BASE_DOMAIN = "192.168.1.72:8080"
+const val BASE_DOMAIN = "192.168.0.143:8080"
 private const val BASE_URL = "http://$BASE_DOMAIN/api/"

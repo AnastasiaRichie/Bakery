@@ -8,11 +8,12 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.json.JSONObject
+import java.util.concurrent.CopyOnWriteArraySet
 
 class WebSocketManager(private val okHttpClient: OkHttpClient) {
 
     private var webSocket: WebSocket? = null
-    private var updateOrderListener: UpdateOrderListener? = null
+    private val updateOrderListeners = CopyOnWriteArraySet<UpdateOrderListener>()
 
     fun connect(userId: Int) {
         if (webSocket != null) return
@@ -48,11 +49,11 @@ class WebSocketManager(private val okHttpClient: OkHttpClient) {
     }
 
     fun attachOrderListener(listener: UpdateOrderListener) {
-        this.updateOrderListener = listener
+        updateOrderListeners.add(listener)
     }
 
-    fun detachOrderListener() {
-        this.updateOrderListener = null
+    fun detachOrderListener(listener: UpdateOrderListener) {
+        updateOrderListeners.remove(listener)
     }
 
     private fun parseWebSocketMessage(text: String) {
@@ -61,17 +62,20 @@ class WebSocketManager(private val okHttpClient: OkHttpClient) {
             when (jsonObject.optString("type")) {
                 ORDER_RECEIVED -> {
                     val rawPayload = jsonObject.optLong(ORDER_ID)
-                    updateOrderListener?.requireOrderUpdate(rawPayload)
+                    updateOrderListeners.forEach { it.requireOrderUpdate(rawPayload) }
                 }
-                else -> {}
+                ORDER_CREATED -> {
+                    updateOrderListeners.forEach { it.onOrderCreated() }
+                }
+                else -> Unit
             }
-        } catch (e: Exception) {
-            "Failed to parse message: ${e.message}"
+        } catch (_: Exception) {
         }
     }
 
     private companion object {
         const val ORDER_RECEIVED = "ORDER_RECEIVED"
+        const val ORDER_CREATED = "ORDER_CREATED"
         const val ORDER_ID = "orderId"
     }
 }

@@ -50,7 +50,7 @@ class OrderViewModel(
     }
 
     override fun onCleared() {
-        webSocketManager.detachOrderListener()
+        webSocketManager.detachOrderListener(this)
         super.onCleared()
     }
 

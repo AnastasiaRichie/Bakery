@@ -17,6 +17,6 @@ interface FoodApi {
     suspend fun returnBackProduct(@Path("id") productId: Long): List<ProductDomainModel>
 
 
-    @GET("/products-unavailable")
+    @GET("products-unavailable")
     suspend fun getUnavailableProductIds(): List<Long>
 }
